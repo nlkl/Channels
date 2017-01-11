@@ -11,27 +11,27 @@ namespace Channels
     {
         T Read();
         T Read(CancellationToken cancellationToken);
-        Result<T> TryRead();
-        Result<T> TryRead(int millisecondsTimeout);
-        Result<T> TryRead(int millisecondsTimeout, CancellationToken cancellationToken);
+        PotentialValue<T> TryRead();
+        PotentialValue<T> TryRead(int millisecondsTimeout);
+        PotentialValue<T> TryRead(int millisecondsTimeout, CancellationToken cancellationToken);
 
         Task<T> ReadAsync();
         Task<T> ReadAsync(CancellationToken cancellationToken);
-        Task<Result<T>> TryReadAsync();
-        Task<Result<T>> TryReadAsync(int millisecondsTimeout);
-        Task<Result<T>> TryReadAsync(int millisecondsTimeout, CancellationToken cancellationToken);
+        Task<PotentialValue<T>> TryReadAsync();
+        Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout);
+        Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout, CancellationToken cancellationToken);
 
         T Take();
         T Take(CancellationToken cancellationToken);
-        Result<T> TryTake();
-        Result<T> TryTake(int millisecondsTimeout);
-        Result<T> TryTake(int millisecondsTimeout, CancellationToken cancellationToken);
+        PotentialValue<T> TryTake();
+        PotentialValue<T> TryTake(int millisecondsTimeout);
+        PotentialValue<T> TryTake(int millisecondsTimeout, CancellationToken cancellationToken);
 
         Task<T> TakeAsync();
         Task<T> TakeAsync(CancellationToken cancellationToken);
-        Task<Result<T>> TryTakeAsync();
-        Task<Result<T>> TryTakeAsync(int millisecondsTimeout);
-        Task<Result<T>> TryTakeAsync(int millisecondsTimeout, CancellationToken cancellationToken);
+        Task<PotentialValue<T>> TryTakeAsync();
+        Task<PotentialValue<T>> TryTakeAsync(int millisecondsTimeout);
+        Task<PotentialValue<T>> TryTakeAsync(int millisecondsTimeout, CancellationToken cancellationToken);
 
         void Put(T value);
         void Put(T value, CancellationToken cancellationToken);

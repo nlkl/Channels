@@ -6,31 +6,31 @@ using System.Threading.Tasks;
 
 namespace Channels
 {
-    public struct Result<T>
+    public struct PotentialValue<T>
     {
-        private readonly bool success;
+        private readonly bool hasValue;
         private readonly T value;
 
-        private Result(T value, bool success)
+        private PotentialValue(T value, bool success)
         {
             this.value = value;
-            this.success = success;
+            this.hasValue = success;
         }
 
-        public bool Success => success;
+        public bool HasValue => hasValue;
 
         public T Value
         {
             get
             {
-                if (!success) throw new InvalidOperationException("Cannot retrieve value from unsuccessful result.");
+                if (!hasValue) throw new InvalidOperationException("Potential value is missing and cannot be retrieved.");
                 return value;
             }
         }
 
         public bool TryGetValue(out T value)
         {
-            if (success)
+            if (hasValue)
             {
                 value = this.value;
                 return true;
@@ -40,7 +40,7 @@ namespace Channels
             return false;
         }
 
-        internal static Result<T> Ok(T value) => new Result<T>(value, true);
-        internal static Result<T> Error() => new Result<T>(default(T), false);
+        internal static PotentialValue<T> WithValue(T value) => new PotentialValue<T>(value, true);
+        internal static PotentialValue<T> WithoutValue() => new PotentialValue<T>(default(T), false);
     }
 }

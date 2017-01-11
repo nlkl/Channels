@@ -28,27 +28,27 @@ namespace Channels
 
         public T Read() => TryRead(Timeout.Infinite, emptyCancellationToken).Value;
         public T Read(CancellationToken cancellationToken) => TryRead(Timeout.Infinite, cancellationToken).Value;
-        public Result<T> TryRead() => TryRead(0, emptyCancellationToken);
-        public Result<T> TryRead(int millisecondsTimeout) => TryRead(millisecondsTimeout, emptyCancellationToken);
+        public PotentialValue<T> TryRead() => TryRead(0, emptyCancellationToken);
+        public PotentialValue<T> TryRead(int millisecondsTimeout) => TryRead(millisecondsTimeout, emptyCancellationToken);
 
-        public Result<T> TryRead(int millisecondsTimeout, CancellationToken cancellationToken)
+        public PotentialValue<T> TryRead(int millisecondsTimeout, CancellationToken cancellationToken)
         {
             if (canTakeSignal.Wait(millisecondsTimeout, cancellationToken))
             {
                 var value = this.value;
                 canTakeSignal.Release();
-                return Result<T>.Ok(value);
+                return PotentialValue<T>.WithValue(value);
             }
 
-            return Result<T>.Error();
+            return PotentialValue<T>.WithoutValue();
         }
 
         public async Task<T> ReadAsync() => (await TryReadAsync(Timeout.Infinite, emptyCancellationToken).ConfigureAwait(false)).Value;
         public async Task<T> ReadAsync(CancellationToken cancellationToken) => (await TryReadAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false)).Value;
-        public Task<Result<T>> TryReadAsync() => TryReadAsync(0, emptyCancellationToken);
-        public Task<Result<T>> TryReadAsync(int millisecondsTimeout) => TryReadAsync(millisecondsTimeout, emptyCancellationToken);
+        public Task<PotentialValue<T>> TryReadAsync() => TryReadAsync(0, emptyCancellationToken);
+        public Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout) => TryReadAsync(millisecondsTimeout, emptyCancellationToken);
 
-        public async Task<Result<T>> TryReadAsync(int millisecondsTimeout, CancellationToken cancellationToken)
+        public async Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout, CancellationToken cancellationToken)
         {
             var hasSignal = await canTakeSignal
                 .WaitAsync(millisecondsTimeout, cancellationToken)
@@ -58,36 +58,36 @@ namespace Channels
             {
                 var value = this.value;
                 canTakeSignal.Release();
-                return Result<T>.Ok(value);
+                return PotentialValue<T>.WithValue(value);
             }
 
-            return Result<T>.Error();
+            return PotentialValue<T>.WithoutValue();
         }
 
         public T Take() => TryTake(Timeout.Infinite, emptyCancellationToken).Value;
         public T Take(CancellationToken cancellationToken) => TryTake(Timeout.Infinite, cancellationToken).Value;
-        public Result<T> TryTake() => TryTake(0, emptyCancellationToken);
-        public Result<T> TryTake(int millisecondsTimeout) => TryTake(millisecondsTimeout, emptyCancellationToken);
+        public PotentialValue<T> TryTake() => TryTake(0, emptyCancellationToken);
+        public PotentialValue<T> TryTake(int millisecondsTimeout) => TryTake(millisecondsTimeout, emptyCancellationToken);
 
-        public Result<T> TryTake(int millisecondsTimeout, CancellationToken cancellationToken)
+        public PotentialValue<T> TryTake(int millisecondsTimeout, CancellationToken cancellationToken)
         {
             if (canTakeSignal.Wait(millisecondsTimeout, cancellationToken))
             {
                 var value = this.value;
                 this.value = default(T);
                 canPutSignal.Release();
-                return Result<T>.Ok(value);
+                return PotentialValue<T>.WithValue(value);
             }
 
-            return Result<T>.Error();
+            return PotentialValue<T>.WithoutValue();
         }
 
         public async Task<T> TakeAsync() => (await TryTakeAsync(Timeout.Infinite, emptyCancellationToken).ConfigureAwait(false)).Value;
         public async Task<T> TakeAsync(CancellationToken cancellationToken) => (await TryTakeAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false)).Value;
-        public Task<Result<T>> TryTakeAsync() => TryTakeAsync(0, emptyCancellationToken);
-        public Task<Result<T>> TryTakeAsync(int millisecondsTimeout) => TryTakeAsync(millisecondsTimeout, emptyCancellationToken);
+        public Task<PotentialValue<T>> TryTakeAsync() => TryTakeAsync(0, emptyCancellationToken);
+        public Task<PotentialValue<T>> TryTakeAsync(int millisecondsTimeout) => TryTakeAsync(millisecondsTimeout, emptyCancellationToken);
 
-        public async Task<Result<T>> TryTakeAsync(int millisecondsTimeout, CancellationToken cancellationToken)
+        public async Task<PotentialValue<T>> TryTakeAsync(int millisecondsTimeout, CancellationToken cancellationToken)
         {
             var hasSignal = await canTakeSignal
                 .WaitAsync(millisecondsTimeout, cancellationToken)
@@ -98,10 +98,10 @@ namespace Channels
                 var value = this.value;
                 this.value = default(T);
                 canPutSignal.Release();
-                return Result<T>.Ok(value);
+                return PotentialValue<T>.WithValue(value);
             }
 
-            return Result<T>.Error();
+            return PotentialValue<T>.WithoutValue();
         }
 
         public void Put(T value) => TryPut(value, Timeout.Infinite, emptyCancellationToken);
