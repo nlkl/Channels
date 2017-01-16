@@ -12,6 +12,53 @@ namespace Channels.Sandbox
     {
         public static void Main()
         {
+            TestMVar();
+            TestUnboundedChannel();
+            Console.ReadKey();
+        }
+
+        public static void TestUnboundedChannel()
+        {
+            Console.WriteLine("= TESTING UNBOUNDED CHANNEL =");
+
+            var completionSignal = new MVar<object>();
+
+            var channel = new Channel<int>();
+
+            var putTask = Task.Run(() =>
+            {
+                Thread.Sleep(2000);
+
+                for (int i = 0; i < 5; i++)
+                {
+                    PutAndShow(channel, i);
+                }
+
+                Thread.Sleep(2000);
+
+                for (int i = 5; i < 10; i++)
+                {
+                    PutAndShow(channel, i);
+                }
+
+                completionSignal.Put(null);
+            });
+
+            for (int i = 0; i < 10; i++)
+            {
+                TakeAndShow(channel);
+            }
+
+            completionSignal.Take();
+            Console.WriteLine();
+            Console.WriteLine("= DONE =");
+            Console.WriteLine();
+        }
+
+        public static void TestMVar()
+        {
+            Console.WriteLine("= TESTING MVAR =");
+
             var completionSignal = new MVar<object>();
 
             var mvar = new MVar<int>();
@@ -19,38 +66,38 @@ namespace Channels.Sandbox
             var putTask = Task.Run(() =>
             {
                 Thread.Sleep(2000);
-                PutAndShowMVar(mvar, 10);
+                PutAndShow(mvar, 10);
 
                 Thread.Sleep(1000);
-                PutAndShowMVar(mvar, 20);
+                PutAndShow(mvar, 20);
 
                 Parallel.Invoke(
-                    () => PutAndShowMVar(mvar, 1),
-                    () => PutAndShowMVar(mvar, 2),
-                    () => PutAndShowMVar(mvar, 3),
-                    () => PutAndShowMVar(mvar, 4)
+                    () => PutAndShow(mvar, 1),
+                    () => PutAndShow(mvar, 2),
+                    () => PutAndShow(mvar, 3),
+                    () => PutAndShow(mvar, 4)
                 );
 
                 completionSignal.Put(null);
             });
 
-            TakeAndShowMVar(mvar);
-            TakeAndShowMVar(mvar);
+            TakeAndShow(mvar);
+            TakeAndShow(mvar);
 
             Parallel.Invoke(
-                () => TakeAndShowMVar(mvar),
-                () => TakeAndShowMVar(mvar),
-                () => TakeAndShowMVar(mvar),
-                () => TakeAndShowMVar(mvar)
+                () => TakeAndShow(mvar),
+                () => TakeAndShow(mvar),
+                () => TakeAndShow(mvar),
+                () => TakeAndShow(mvar)
             );
 
             completionSignal.Take();
             Console.WriteLine();
             Console.WriteLine("= DONE =");
-            Console.ReadKey();
+            Console.WriteLine();
         }
 
-        private static void PutAndShowMVar<T>(MVar<T> mvar, T value)
+        private static void PutAndShow<T>(IChannel<T> mvar, T value)
         {
             var threadId = Thread.CurrentThread.ManagedThreadId;
             Console.WriteLine($"Putting value '{value}' from thread {threadId}");
@@ -60,7 +107,7 @@ namespace Channels.Sandbox
             Console.WriteLine($"Successfully put value '{value}' in {sw.ElapsedMilliseconds} ms from thread {threadId}");
         }
 
-        private static void TakeAndShowMVar<T>(MVar<T> mvar)
+        private static void TakeAndShow<T>(IChannel<T> mvar)
         {
             var threadId = Thread.CurrentThread.ManagedThreadId;
             Console.WriteLine($"Taking value from thread {threadId}");
