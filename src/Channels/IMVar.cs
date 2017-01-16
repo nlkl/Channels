@@ -9,16 +9,16 @@ namespace Channels
 {
     public interface IMVar<T>
     {
-        T Read();
-        T Read(CancellationToken cancellationToken);
-        PotentialValue<T> TryRead();
-        PotentialValue<T> TryRead(int millisecondsTimeout);
-        PotentialValue<T> TryRead(int millisecondsTimeout, CancellationToken cancellationToken);
+        T Peek();
+        T Peek(CancellationToken cancellationToken);
+        PotentialValue<T> TryPeek();
+        PotentialValue<T> TryPeek(int millisecondsTimeout);
+        PotentialValue<T> TryPeek(int millisecondsTimeout, CancellationToken cancellationToken);
 
-        Task<T> ReadAsync();
-        Task<T> ReadAsync(CancellationToken cancellationToken);
-        Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout);
-        Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout, CancellationToken cancellationToken);
+        Task<T> PeekAsync();
+        Task<T> PeekAsync(CancellationToken cancellationToken);
+        Task<PotentialValue<T>> TryPeekAsync(int millisecondsTimeout);
+        Task<PotentialValue<T>> TryPeekAsync(int millisecondsTimeout, CancellationToken cancellationToken);
 
         T Take();
         T Take(CancellationToken cancellationToken);

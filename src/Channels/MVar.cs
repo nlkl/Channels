@@ -26,12 +26,12 @@ namespace Channels
             canTakeSignal.Release();
         }
 
-        public T Read() => TryRead(Timeout.Infinite, emptyCancellationToken).Value;
-        public T Read(CancellationToken cancellationToken) => TryRead(Timeout.Infinite, cancellationToken).Value;
-        public PotentialValue<T> TryRead() => TryRead(0, emptyCancellationToken);
-        public PotentialValue<T> TryRead(int millisecondsTimeout) => TryRead(millisecondsTimeout, emptyCancellationToken);
+        public T Peek() => TryPeek(Timeout.Infinite, emptyCancellationToken).Value;
+        public T Peek(CancellationToken cancellationToken) => TryPeek(Timeout.Infinite, cancellationToken).Value;
+        public PotentialValue<T> TryPeek() => TryPeek(0, emptyCancellationToken);
+        public PotentialValue<T> TryPeek(int millisecondsTimeout) => TryPeek(millisecondsTimeout, emptyCancellationToken);
 
-        public PotentialValue<T> TryRead(int millisecondsTimeout, CancellationToken cancellationToken)
+        public PotentialValue<T> TryPeek(int millisecondsTimeout, CancellationToken cancellationToken)
         {
             if (canTakeSignal.Wait(millisecondsTimeout, cancellationToken))
             {
@@ -43,11 +43,11 @@ namespace Channels
             return PotentialValue<T>.WithoutValue();
         }
 
-        public async Task<T> ReadAsync() => (await TryReadAsync(Timeout.Infinite, emptyCancellationToken).ConfigureAwait(false)).Value;
-        public async Task<T> ReadAsync(CancellationToken cancellationToken) => (await TryReadAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false)).Value;
-        public Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout) => TryReadAsync(millisecondsTimeout, emptyCancellationToken);
+        public async Task<T> PeekAsync() => (await TryPeekAsync(Timeout.Infinite, emptyCancellationToken).ConfigureAwait(false)).Value;
+        public async Task<T> PeekAsync(CancellationToken cancellationToken) => (await TryPeekAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false)).Value;
+        public Task<PotentialValue<T>> TryPeekAsync(int millisecondsTimeout) => TryPeekAsync(millisecondsTimeout, emptyCancellationToken);
 
-        public async Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout, CancellationToken cancellationToken)
+        public async Task<PotentialValue<T>> TryPeekAsync(int millisecondsTimeout, CancellationToken cancellationToken)
         {
             var hasSignal = await canTakeSignal
                 .WaitAsync(millisecondsTimeout, cancellationToken)

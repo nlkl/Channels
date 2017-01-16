@@ -25,7 +25,7 @@ namespace Channels
             if (!stream.HasValue) return PotentialValue<T>.WithoutValue();
 
             var value = PotentialValue<T>.WithoutValue();
-            var node = stream.Value.TryRead();
+            var node = stream.Value.TryPeek();
             if (node.HasValue)
             {
                 value = PotentialValue<T>.WithValue(node.Value.Value);
@@ -38,7 +38,7 @@ namespace Channels
         public T Peek()
         {
             var stream = outgoing.Take();
-            var node = stream.Read();
+            var node = stream.Peek();
             outgoing.Put(stream);
             return node.Value;
         }
@@ -48,7 +48,7 @@ namespace Channels
             var stream = outgoing.Take(cancellationToken);
             try
             {
-                var node = stream.Read(cancellationToken);
+                var node = stream.Peek(cancellationToken);
                 return node.Value;
             }
             finally
@@ -60,7 +60,7 @@ namespace Channels
         public async Task<T> PeekAsync()
         {
             var stream = await outgoing.TakeAsync().ConfigureAwait(false);
-            var node = await stream.ReadAsync().ConfigureAwait(false);
+            var node = await stream.PeekAsync().ConfigureAwait(false);
             await outgoing.PutAsync(stream).ConfigureAwait(false);
             return node.Value;
         }
@@ -70,7 +70,7 @@ namespace Channels
             var stream = await outgoing.TakeAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                var node = await stream.ReadAsync(cancellationToken).ConfigureAwait(false);
+                var node = await stream.PeekAsync(cancellationToken).ConfigureAwait(false);
                 return node.Value;
             }
             finally
