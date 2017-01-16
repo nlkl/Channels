@@ -19,6 +19,7 @@ namespace Channels
 
         public MVar(T value)
         {
+            this.value = value;
             canTakeSignal.Release();
         }
 
