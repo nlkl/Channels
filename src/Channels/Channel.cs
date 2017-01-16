@@ -9,17 +9,22 @@ namespace Channels
 {
     public class Channel<T> : IChannel<T>
     {
-        private static readonly PotentialValue<T> emptyValue;
-
         private readonly MVar<MVar<Node>> incoming;
         private readonly MVar<MVar<Node>> outgoing;
+
+        public Channel()
+        {
+            var stream = new MVar<Node>();
+            incoming = new MVar<MVar<Node>>(stream);
+            outgoing = new MVar<MVar<Node>>(stream);
+        }
 
         public PotentialValue<T> TryPeek()
         {
             var stream = outgoing.TryTake();
-            if (!stream.HasValue) return emptyValue;
+            if (!stream.HasValue) return PotentialValue<T>.WithoutValue();
 
-            var value = emptyValue;
+            var value = PotentialValue<T>.WithoutValue();
             var node = stream.Value.TryRead();
             if (node.HasValue)
             {
@@ -77,9 +82,9 @@ namespace Channels
         public PotentialValue<T> TryReceive()
         {
             var stream = outgoing.TryTake();
-            if (!stream.HasValue) return emptyValue;
+            if (!stream.HasValue) return PotentialValue<T>.WithoutValue();
 
-            var value = emptyValue;
+            var value = PotentialValue<T>.WithoutValue();
             var node = stream.Value.TryTake();
             if (node.HasValue)
             {

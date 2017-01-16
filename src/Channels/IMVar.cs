@@ -17,7 +17,6 @@ namespace Channels
 
         Task<T> ReadAsync();
         Task<T> ReadAsync(CancellationToken cancellationToken);
-        Task<PotentialValue<T>> TryReadAsync();
         Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout);
         Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout, CancellationToken cancellationToken);
 
@@ -29,7 +28,6 @@ namespace Channels
 
         Task<T> TakeAsync();
         Task<T> TakeAsync(CancellationToken cancellationToken);
-        Task<PotentialValue<T>> TryTakeAsync();
         Task<PotentialValue<T>> TryTakeAsync(int millisecondsTimeout);
         Task<PotentialValue<T>> TryTakeAsync(int millisecondsTimeout, CancellationToken cancellationToken);
 
@@ -41,7 +39,6 @@ namespace Channels
 
         Task PutAsync(T value);
         Task PutAsync(T value, CancellationToken cancellationToken);
-        Task<bool> TryPutAsync(T value);
         Task<bool> TryPutAsync(T value, int millisecondsTimeout);
         Task<bool> TryPutAsync(T value, int millisecondsTimeout, CancellationToken cancellationToken);
     }

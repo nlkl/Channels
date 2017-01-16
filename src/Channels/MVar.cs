@@ -45,7 +45,6 @@ namespace Channels
 
         public async Task<T> ReadAsync() => (await TryReadAsync(Timeout.Infinite, emptyCancellationToken).ConfigureAwait(false)).Value;
         public async Task<T> ReadAsync(CancellationToken cancellationToken) => (await TryReadAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false)).Value;
-        public Task<PotentialValue<T>> TryReadAsync() => TryReadAsync(0, emptyCancellationToken);
         public Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout) => TryReadAsync(millisecondsTimeout, emptyCancellationToken);
 
         public async Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout, CancellationToken cancellationToken)
@@ -84,7 +83,6 @@ namespace Channels
 
         public async Task<T> TakeAsync() => (await TryTakeAsync(Timeout.Infinite, emptyCancellationToken).ConfigureAwait(false)).Value;
         public async Task<T> TakeAsync(CancellationToken cancellationToken) => (await TryTakeAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false)).Value;
-        public Task<PotentialValue<T>> TryTakeAsync() => TryTakeAsync(0, emptyCancellationToken);
         public Task<PotentialValue<T>> TryTakeAsync(int millisecondsTimeout) => TryTakeAsync(millisecondsTimeout, emptyCancellationToken);
 
         public async Task<PotentialValue<T>> TryTakeAsync(int millisecondsTimeout, CancellationToken cancellationToken)
@@ -123,7 +121,6 @@ namespace Channels
 
         public Task PutAsync(T value) => TryPutAsync(value, Timeout.Infinite, emptyCancellationToken);
         public Task PutAsync(T value, CancellationToken cancellationToken) => TryPutAsync(value, Timeout.Infinite, cancellationToken);
-        public Task<bool> TryPutAsync(T value) => TryPutAsync(value, 0, emptyCancellationToken);
         public Task<bool> TryPutAsync(T value, int millisecondsTimeout) => TryPutAsync(value, millisecondsTimeout, emptyCancellationToken);
 
         public async Task<bool> TryPutAsync(T value, int millisecondsTimeout, CancellationToken cancellationToken)

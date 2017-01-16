@@ -8,6 +8,8 @@ namespace Channels
 {
     public struct PotentialValue<T>
     {
+        private static readonly PotentialValue<T> empty = new PotentialValue<T>(default(T), false);
+
         private readonly bool hasValue;
         private readonly T value;
 
@@ -41,6 +43,6 @@ namespace Channels
         }
 
         internal static PotentialValue<T> WithValue(T value) => new PotentialValue<T>(value, true);
-        internal static PotentialValue<T> WithoutValue() => new PotentialValue<T>(default(T), false);
+        internal static PotentialValue<T> WithoutValue() => empty;
     }
 }
