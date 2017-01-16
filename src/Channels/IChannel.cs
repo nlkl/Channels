@@ -2,22 +2,29 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Channels
 {
     public interface IChannel<T>
     {
+        PotentialValue<T> TryPeek();
         T Peek();
-        bool TryPeek(out T value);
+        T Peek(CancellationToken cancellationToken);
         Task<T> PeekAsync();
+        Task<T> PeekAsync(CancellationToken cancellationToken);
 
+        PotentialValue<T> TryReceive();
         T Receive();
-        bool TryReceive(out T value);
+        T Receive(CancellationToken cancellationToken);
         Task<T> ReceiveAsync();
+        Task<T> ReceiveAsync(CancellationToken cancellationToken);
 
-        void Send(T value);
         bool TrySend(T value);
+        void Send(T value);
+        void Send(T value, CancellationToken cancellationToken);
         Task SendAsync(T value);
+        Task SendAsync(T value, CancellationToken cancellationToken);
     }
 }

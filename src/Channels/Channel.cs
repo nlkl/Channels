@@ -9,23 +9,25 @@ namespace Channels
 {
     public class Channel<T> : IChannel<T>
     {
+        private static readonly PotentialValue<T> emptyValue;
+
         private readonly MVar<MVar<Node>> incoming;
         private readonly MVar<MVar<Node>> outgoing;
 
-        private readonly int bound;
-        private int count;
-
-        public Channel()
+        public PotentialValue<T> TryPeek()
         {
-            this.bound = 0;
-            this.count = 0;
-        }
+            var stream = outgoing.TryTake();
+            if (!stream.HasValue) return emptyValue;
 
-        public Channel(int bound)
-        {
-            if (bound <= 0) throw new ArgumentOutOfRangeException(nameof(bound), "Expected bound to be larger than zero.");
-            this.bound = bound;
-            this.count = 0;
+            var value = emptyValue;
+            var node = stream.Value.TryRead();
+            if (node.HasValue)
+            {
+                value = PotentialValue<T>.WithValue(node.Value.Value);
+            }
+            outgoing.Put(stream.Value);
+
+            return value;
         }
 
         public T Peek()
@@ -36,16 +38,61 @@ namespace Channels
             return node.Value;
         }
 
-        public Task<T> PeekAsync()
+        public T Peek(CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var stream = outgoing.Take(cancellationToken);
+            try
+            {
+                var node = stream.Read(cancellationToken);
+                return node.Value;
+            }
+            finally
+            {
+                outgoing.Put(stream);
+            }
         }
 
-        public bool TryPeek(out T value)
+        public async Task<T> PeekAsync()
         {
-            throw new NotImplementedException();
+            var stream = await outgoing.TakeAsync().ConfigureAwait(false);
+            var node = await stream.ReadAsync().ConfigureAwait(false);
+            await outgoing.PutAsync(stream).ConfigureAwait(false);
+            return node.Value;
         }
 
+        public async Task<T> PeekAsync(CancellationToken cancellationToken)
+        {
+            var stream = await outgoing.TakeAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                var node = await stream.ReadAsync(cancellationToken).ConfigureAwait(false);
+                return node.Value;
+            }
+            finally
+            {
+                await outgoing.PutAsync(stream).ConfigureAwait(false);
+            }
+        }
+
+        public PotentialValue<T> TryReceive()
+        {
+            var stream = outgoing.TryTake();
+            if (!stream.HasValue) return emptyValue;
+
+            var value = emptyValue;
+            var node = stream.Value.TryTake();
+            if (node.HasValue)
+            {
+                value = PotentialValue<T>.WithValue(node.Value.Value);
+                outgoing.Put(node.Value.Next);
+            }
+            else
+            {
+                outgoing.Put(stream.Value);
+            }
+
+            return value;
+        }
 
         public T Receive()
         {
@@ -55,32 +102,117 @@ namespace Channels
             return node.Value;
         }
 
-        public Task<T> ReceiveAsync()
+        public T Receive(CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var stream = outgoing.Take(cancellationToken);
+            try
+            {
+                var node = stream.Take(cancellationToken);
+                outgoing.Put(node.Next);
+                return node.Value;
+            }
+            catch
+            {
+                outgoing.Put(stream);
+                throw;
+            }
         }
 
-        public bool TryReceive(out T value)
+        public async Task<T> ReceiveAsync()
         {
-            throw new NotImplementedException();
+            var stream = await outgoing.TakeAsync().ConfigureAwait(false);
+            var node = await stream.TakeAsync().ConfigureAwait(false);
+            await outgoing.PutAsync(node.Next).ConfigureAwait(false);
+            return node.Value;
+        }
+
+        public async Task<T> ReceiveAsync(CancellationToken cancellationToken)
+        {
+            var stream = await outgoing.TakeAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                var node = await stream.TakeAsync(cancellationToken).ConfigureAwait(false);
+                await outgoing.PutAsync(node.Next).ConfigureAwait(false);
+                return node.Value;
+            }
+            catch
+            {
+                await outgoing.PutAsync(stream).ConfigureAwait(false);
+                throw;
+            }
+        }
+
+        public bool TrySend(T value)
+        {
+            var stream = incoming.TryTake();
+            if (!stream.HasValue) return false;
+
+            var next = new MVar<Node>();
+            var node = new Node(value, next);
+
+            var success = stream.Value.TryPut(node);
+            if (success)
+            {
+                incoming.Put(next);
+            }
+            else
+            {
+                incoming.Put(stream.Value);
+            }
+
+            return success;
         }
 
         public void Send(T value)
         {
             var stream = incoming.Take();
-            var node = new Node(value, new MVar<Node>());
+            var next = new MVar<Node>();
+            var node = new Node(value, next);
             stream.Put(node);
-            incoming.Put(stream);
+            incoming.Put(next);
         }
 
-        public Task SendAsync(T value)
+        public void Send(T value, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var stream = incoming.Take(cancellationToken);
+            try
+            {
+                var next = new MVar<Node>();
+                var node = new Node(value, next);
+                stream.Put(node, cancellationToken);
+                incoming.Put(next);
+            }
+            catch
+            {
+                incoming.Put(stream);
+                throw;
+            }
         }
 
-        public bool TrySend(T value)
+        public async Task SendAsync(T value)
         {
-            throw new NotImplementedException();
+            var stream = await incoming.TakeAsync().ConfigureAwait(false);
+            var next = new MVar<Node>();
+            var node = new Node(value, next);
+            await stream.PutAsync(node).ConfigureAwait(false);
+            await incoming.PutAsync(next).ConfigureAwait(false);
+        }
+
+        public async Task SendAsync(T value, CancellationToken cancellationToken)
+        {
+            var stream = await incoming.TakeAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                var next = new MVar<Node>();
+                var node = new Node(value, next);
+                await stream.PutAsync(node, cancellationToken).ConfigureAwait(false);
+                await incoming.PutAsync(next).ConfigureAwait(false);
+            }
+            catch
+            {
+                await incoming.PutAsync(stream).ConfigureAwait(false);
+                throw;
+            }
         }
 
         private struct Node
