@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Channels
 {
@@ -16,7 +12,7 @@ namespace Channels
         private PotentialValue(T value, bool success)
         {
             this.value = value;
-            this.hasValue = success;
+            hasValue = success;
         }
 
         public bool HasValue => hasValue;
