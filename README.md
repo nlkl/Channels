@@ -1,2 +1,2 @@
 # Channels
-Simple and efficient channels for interprocess communication in .NET
+Simple channels for interprocess communication in .NET
