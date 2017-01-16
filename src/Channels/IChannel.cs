@@ -11,16 +11,16 @@ namespace Channels
         Task<T> PeekAsync();
         Task<T> PeekAsync(CancellationToken cancellationToken);
 
-        PotentialValue<T> TryReceive();
-        T Receive();
-        T Receive(CancellationToken cancellationToken);
-        Task<T> ReceiveAsync();
-        Task<T> ReceiveAsync(CancellationToken cancellationToken);
+        PotentialValue<T> TryTake();
+        T Take();
+        T Take(CancellationToken cancellationToken);
+        Task<T> TakeAsync();
+        Task<T> TakeAsync(CancellationToken cancellationToken);
 
-        bool TrySend(T value);
-        void Send(T value);
-        void Send(T value, CancellationToken cancellationToken);
-        Task SendAsync(T value);
-        Task SendAsync(T value, CancellationToken cancellationToken);
+        bool TryPut(T value);
+        void Put(T value);
+        void Put(T value, CancellationToken cancellationToken);
+        Task PutAsync(T value);
+        Task PutAsync(T value, CancellationToken cancellationToken);
     }
 }

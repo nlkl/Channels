@@ -75,7 +75,7 @@ namespace Channels
             }
         }
 
-        public PotentialValue<T> TryReceive()
+        public PotentialValue<T> TryTake()
         {
             var stream = outgoing.TryTake();
             if (!stream.HasValue) return PotentialValue<T>.WithoutValue();
@@ -95,7 +95,7 @@ namespace Channels
             return value;
         }
 
-        public T Receive()
+        public T Take()
         {
             var stream = outgoing.Take();
             var node = stream.Take();
@@ -103,7 +103,7 @@ namespace Channels
             return node.Value;
         }
 
-        public T Receive(CancellationToken cancellationToken)
+        public T Take(CancellationToken cancellationToken)
         {
             var stream = outgoing.Take(cancellationToken);
             try
@@ -119,7 +119,7 @@ namespace Channels
             }
         }
 
-        public async Task<T> ReceiveAsync()
+        public async Task<T> TakeAsync()
         {
             var stream = await outgoing.TakeAsync().ConfigureAwait(false);
             var node = await stream.TakeAsync().ConfigureAwait(false);
@@ -127,7 +127,7 @@ namespace Channels
             return node.Value;
         }
 
-        public async Task<T> ReceiveAsync(CancellationToken cancellationToken)
+        public async Task<T> TakeAsync(CancellationToken cancellationToken)
         {
             var stream = await outgoing.TakeAsync(cancellationToken).ConfigureAwait(false);
             try
@@ -143,7 +143,7 @@ namespace Channels
             }
         }
 
-        public bool TrySend(T value)
+        public bool TryPut(T value)
         {
             var stream = incoming.TryTake();
             if (!stream.HasValue) return false;
@@ -164,7 +164,7 @@ namespace Channels
             return success;
         }
 
-        public void Send(T value)
+        public void Put(T value)
         {
             var stream = incoming.Take();
             var next = new MVar<Node>();
@@ -173,7 +173,7 @@ namespace Channels
             incoming.Put(next);
         }
 
-        public void Send(T value, CancellationToken cancellationToken)
+        public void Put(T value, CancellationToken cancellationToken)
         {
             var stream = incoming.Take(cancellationToken);
             try
@@ -190,7 +190,7 @@ namespace Channels
             }
         }
 
-        public async Task SendAsync(T value)
+        public async Task PutAsync(T value)
         {
             var stream = await incoming.TakeAsync().ConfigureAwait(false);
             var next = new MVar<Node>();
@@ -199,7 +199,7 @@ namespace Channels
             await incoming.PutAsync(next).ConfigureAwait(false);
         }
 
-        public async Task SendAsync(T value, CancellationToken cancellationToken)
+        public async Task PutAsync(T value, CancellationToken cancellationToken)
         {
             var stream = await incoming.TakeAsync(cancellationToken).ConfigureAwait(false);
             try
