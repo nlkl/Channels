@@ -6,8 +6,6 @@ namespace Channels
 {
     public class SynchronousChannel<T> : IChannel<T>
     {
-        private readonly SemaphoreSlim hasPutSignal = new SemaphoreSlim(0, 1);
-        private readonly SemaphoreSlim hasTakenSignal = new SemaphoreSlim(0, 1);
         private readonly SemaphoreSlim readerReadySignal = new SemaphoreSlim(0, 1);
         private readonly MVar<T> valueCell = new MVar<T>();
 
@@ -22,7 +20,7 @@ namespace Channels
             var value = valueCell.TryTake();
             if (value.HasValue)
             {
-                hasTakenSignal.Release();
+                readerReadySignal.Release();
             }
             return value;
         }
@@ -31,38 +29,35 @@ namespace Channels
         {
             readerReadySignal.Release();
             var value = valueCell.Take();
-            // hasTakenSignal.Release();
             return value;
         }
 
         public T Take(CancellationToken cancellationToken)
         {
             var value = valueCell.Take(cancellationToken);
-            hasTakenSignal.Release();
+            readerReadySignal.Release();
             return value;
         }
 
         public async Task<T> TakeAsync()
         {
+            readerReadySignal.Release();
             var value = await valueCell.TakeAsync().ConfigureAwait(false);
-            hasTakenSignal.Release();
             return value;
         }
 
         public async Task<T> TakeAsync(CancellationToken cancellationToken)
         {
             var value = await valueCell.TakeAsync(cancellationToken).ConfigureAwait(false);
-            hasTakenSignal.Release();
+            readerReadySignal.Release();
             return value;
         }
 
         public bool TryPut(T value)
         {
-            // TODO: Make atomic
-            if (valueCell.TryPut(value))
-            {
-                return hasTakenSignal.Wait(0);
-            }
+            if (!readerReadySignal.Wait(0)) return false;
+            if (valueCell.TryPut(value)) return true;
+            readerReadySignal.Release();
             return false;
         }
 
@@ -70,12 +65,10 @@ namespace Channels
         {
             valueCell.Put(value);
             readerReadySignal.Wait();
-            // hasTakenSignal.Wait();
         }
 
         public void Put(T value, CancellationToken cancellationToken)
         {
-            // --TODO: Make atomic
             readerReadySignal.Wait(cancellationToken);
             try
             {
@@ -85,20 +78,25 @@ namespace Channels
             {
                 readerReadySignal.Release();
             }
-            //hasTakenSignal.Wait(cancellationToken);
         }
 
         public async Task PutAsync(T value)
         {
             await valueCell.PutAsync(value).ConfigureAwait(false);
-            await hasTakenSignal.WaitAsync().ConfigureAwait(false);
+            await readerReadySignal.WaitAsync().ConfigureAwait(false);
         }
 
         public async Task PutAsync(T value, CancellationToken cancellationToken)
         {
-            // TODO: Make atomic
-            await valueCell.PutAsync(value, cancellationToken).ConfigureAwait(false);
-            await hasTakenSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await readerReadySignal.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await valueCell.PutAsync(value, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                readerReadySignal.Release();
+            }
         }
     }
 }
