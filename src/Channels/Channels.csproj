@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SynchronousChannel.cs" />
     <Compile Include="Channel.cs" />
     <Compile Include="IChannel.cs" />
     <Compile Include="IMVar.cs" />
