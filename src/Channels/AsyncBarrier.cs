@@ -91,7 +91,7 @@ namespace Channels
                 else if (remainingCount < 0)
                 {
                     remainingCount = initialCount - 1;
-                    signal = new SemaphoreSlim(0, remainingCount);
+                    signal = new SemaphoreSlim(0, initialCount);
                 }
                 return signal;
             }
