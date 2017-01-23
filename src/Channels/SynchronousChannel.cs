@@ -4,12 +4,14 @@ using System.Threading.Tasks;
 
 namespace Channels
 {
-    // NOTE: This is a work-in-progress, and neither correct nor thread-safe yet.
     public class SynchronousChannel<T> : IChannel<T>
     {
-        private readonly MVar<object> isPuttingSignal;
-        private readonly MVar<object> isTakingSignal;
-        private readonly MVar<T> valueCell;
+        private static readonly CancellationToken emptyCancellationToken = new CancellationToken();
+
+        private readonly SemaphoreSlim takeLock = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim putLock = new SemaphoreSlim(1, 1);
+        private readonly AsyncBarrier barrier = new AsyncBarrier(2);
+        private readonly MVar<T> valueCell = new MVar<T>();
 
         public PotentialValue<T> TryPeek() => valueCell.TryPeek();
         public T Peek() => valueCell.Peek();
@@ -17,100 +19,84 @@ namespace Channels
         public Task<T> PeekAsync() => valueCell.PeekAsync();
         public Task<T> PeekAsync(CancellationToken cancellationToken) => valueCell.PeekAsync();
 
-        public PotentialValue<T> TryTake()
+        public PotentialValue<T> TryTake() => TryTake(false, emptyCancellationToken);
+        public T Take() => TryTake(true, emptyCancellationToken).Value;
+        public T Take(CancellationToken cancellationToken) => TryTake(true, cancellationToken).Value;
+
+        private PotentialValue<T> TryTake(bool wait, CancellationToken cancellationToken)
         {
-            var value = PotentialValue<T>.WithoutValue();
-
-            if (!isTakingSignal.TryPut(null)) return value;
-
-            if (isPuttingSignal.TryPeek().HasValue)
-            {
-                value = valueCell.TryTake();
-            }
-
-            isTakingSignal.Take();
-
-            return value;
-        }
-
-        public T Take()
-        {
-            isTakingSignal.Put(null);
-            isPuttingSignal.Peek();
-            var value = valueCell.Take();
-            isTakingSignal.Take();
-            return value;
-        }
-
-        public T Take(CancellationToken cancellationToken)
-        {
-            isTakingSignal.Put(null, cancellationToken);
+            var timeout = wait ? Timeout.Infinite : 0;
+            if (!takeLock.Wait(timeout, cancellationToken)) return PotentialValue<T>.WithoutValue();
             try
             {
-                isPuttingSignal.Peek(cancellationToken);
-                return valueCell.Take(cancellationToken);
+                if (barrier.SignalAndWait(timeout, cancellationToken))
+                {
+                    var value = valueCell.Take();
+                    return PotentialValue<T>.WithValue(value);
+                }
+
+                return PotentialValue<T>.WithoutValue();
             }
             finally
             {
-                isTakingSignal.Take();
+                takeLock.Release();
             }
         }
 
-        public async Task<T> TakeAsync()
-        {
-            throw new NotImplementedException();
-        }
+        public Task<T> TakeAsync() => TakeAsync(emptyCancellationToken);
 
         public async Task<T> TakeAsync(CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
-        }
-
-        public bool TryPut(T value)
-        {
-            var success = false;
-
-            if (!isPuttingSignal.TryPut(null)) return success;
-
-            if (isTakingSignal.TryPeek().HasValue)
-            {
-                success = valueCell.TryPut(value);
-            }
-
-            isPuttingSignal.Take();
-            return success;
-        }
-
-        public void Put(T value)
-        {
-            isPuttingSignal.Put(null);
-            isTakingSignal.Peek();
-            valueCell.Put(value);
-            isPuttingSignal.Take();
-        }
-
-        public void Put(T value, CancellationToken cancellationToken)
-        {
-            isPuttingSignal.Put(null, cancellationToken);
+            await takeLock.WaitAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
             try
             {
-                isTakingSignal.Peek(cancellationToken);
-                valueCell.Put(value, cancellationToken);
+                await barrier.SignalAndWaitAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
+                return valueCell.Take();
             }
             finally
             {
-                isPuttingSignal.Take();
+                takeLock.Release();
             }
         }
 
-        public async Task PutAsync(T value)
+        public bool TryPut(T value) => TryPut(value, false, emptyCancellationToken);
+        public void Put(T value) => TryPut(value, true, emptyCancellationToken);
+        public void Put(T value, CancellationToken cancellationToken) => TryPut(value, true, cancellationToken);
+
+        private bool TryPut(T value, bool wait, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var timeout = wait ? Timeout.Infinite : 0;
+            if (!putLock.Wait(timeout, cancellationToken)) return false;
+            try
+            {
+                if (barrier.SignalAndWait(timeout, cancellationToken))
+                {
+                    valueCell.Put(value);
+                    return true;
+                }
+
+                return false;
+            }
+            finally
+            {
+                putLock.Release();
+            }
         }
+
+        public Task PutAsync(T value) => PutAsync(value, emptyCancellationToken);
 
         public async Task PutAsync(T value, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            await putLock.WaitAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await barrier.SignalAndWaitAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
+                valueCell.Put(value);
+            }
+            finally
+            {
+                putLock.Release();
+            }
         }
     }
 }
