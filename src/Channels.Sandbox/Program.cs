@@ -12,7 +12,7 @@ namespace Channels.Sandbox
     {
         public static void Main()
         {
-            TestMVar();
+            //TestMVar();
             TestUnboundedChannel();
             Console.ReadKey();
         }
@@ -23,7 +23,7 @@ namespace Channels.Sandbox
 
             var completionSignal = new MVar<object>();
 
-            var channel = new Channel<int>();
+            var channel = new UnboundedChannel<int>();
 
             var putTask = Task.Run(() =>
             {

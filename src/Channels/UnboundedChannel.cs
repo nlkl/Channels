@@ -3,12 +3,12 @@ using System.Threading.Tasks;
 
 namespace Channels
 {
-    public class Channel<T> : IChannel<T>
+    public class UnboundedChannel<T> : IChannel<T>
     {
         private readonly MVar<MVar<Node>> incoming;
         private readonly MVar<MVar<Node>> outgoing;
 
-        public Channel()
+        public UnboundedChannel()
         {
             var stream = new MVar<Node>();
             incoming = new MVar<MVar<Node>>(stream);
