@@ -4,33 +4,33 @@ namespace Channels
 {
     public struct PotentialValue<T>
     {
-        private static readonly PotentialValue<T> empty = new PotentialValue<T>(default(T), false);
+        private static readonly PotentialValue<T> _empty = new PotentialValue<T>(default(T), false);
 
-        private readonly bool hasValue;
-        private readonly T value;
+        private readonly bool _hasValue;
+        private readonly T _value;
 
         private PotentialValue(T value, bool success)
         {
-            this.value = value;
-            hasValue = success;
+            _value = value;
+            _hasValue = success;
         }
 
-        public bool HasValue => hasValue;
+        public bool HasValue => _hasValue;
 
         public T Value
         {
             get
             {
-                if (!hasValue) throw new InvalidOperationException("Potential value is missing and cannot be retrieved.");
-                return value;
+                if (!_hasValue) throw new InvalidOperationException("Potential value is missing and cannot be retrieved.");
+                return _value;
             }
         }
 
         public bool TryGetValue(out T value)
         {
-            if (hasValue)
+            if (_hasValue)
             {
-                value = this.value;
+                value = _value;
                 return true;
             }
 
@@ -39,6 +39,6 @@ namespace Channels
         }
 
         internal static PotentialValue<T> WithValue(T value) => new PotentialValue<T>(value, true);
-        internal static PotentialValue<T> WithoutValue() => empty;
+        internal static PotentialValue<T> WithoutValue() => _empty;
     }
 }

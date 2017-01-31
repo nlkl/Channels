@@ -6,18 +6,18 @@ namespace Channels
 {
     internal class AsyncBarrier
     {
-        private readonly object @lock = new object();
-        private readonly int initialCount;
-        private int remainingCount;
-        private SemaphoreSlim signal;
+        private readonly object _lock = new object();
+        private readonly int _initialCount;
+        private int _remainingCount;
+        private SemaphoreSlim _signal;
 
         public AsyncBarrier(int participants)
         {
             if (participants < 2) throw new ArgumentOutOfRangeException(nameof(participants), "At least two participants required.");
 
-            initialCount = participants;
-            remainingCount = participants;
-            signal = new SemaphoreSlim(0, participants);
+            _initialCount = participants;
+            _remainingCount = participants;
+            _signal = new SemaphoreSlim(0, participants);
         }
 
         public bool SignalAndWait(int millisecondsTimeout, CancellationToken cancellationToken)
@@ -28,20 +28,20 @@ namespace Channels
                 var success = currentSignal.Wait(millisecondsTimeout, cancellationToken);
                 if (success) return true;
 
-                lock (@lock)
+                lock (_lock)
                 {
                     if (currentSignal.Wait(0)) return true;
-                    remainingCount += 1;
+                    _remainingCount += 1;
                 }
 
                 return false;
             }
-            catch (OperationCanceledException)
+            catch
             {
-                lock (@lock)
+                lock (_lock)
                 {
                     if (currentSignal.Wait(0)) return true;
-                    remainingCount += 1;
+                    _remainingCount += 1;
                 }
 
                 throw;
@@ -59,20 +59,20 @@ namespace Channels
 
                 if (success) return true;
 
-                lock (@lock)
+                lock (_lock)
                 {
                     if (currentSignal.Wait(0)) return true;
-                    remainingCount += 1;
+                    _remainingCount += 1;
                 }
 
                 return false;
             }
-            catch (OperationCanceledException)
+            catch
             {
-                lock (@lock)
+                lock (_lock)
                 {
                     if (currentSignal.Wait(0)) return true;
-                    remainingCount += 1;
+                    _remainingCount += 1;
                 }
 
                 throw;
@@ -81,19 +81,21 @@ namespace Channels
 
         private SemaphoreSlim ReleaseAndGetSignal()
         {
-            lock (@lock)
+            lock (_lock)
             {
-                remainingCount -= 1;
-                if (remainingCount == 0)
+                _remainingCount -= 1;
+
+                if (_remainingCount == 0)
                 {
-                    signal.Release(initialCount);
+                    _signal.Release(_initialCount);
                 }
-                else if (remainingCount < 0)
+                else if (_remainingCount < 0)
                 {
-                    remainingCount = initialCount - 1;
-                    signal = new SemaphoreSlim(0, initialCount);
+                    _remainingCount = _initialCount - 1;
+                    _signal = new SemaphoreSlim(0, _initialCount);
                 }
-                return signal;
+
+                return _signal;
             }
         }
     }
