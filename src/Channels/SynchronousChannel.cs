@@ -6,96 +6,114 @@ namespace Channels
 {
     public class SynchronousChannel<T> : IChannel<T>
     {
-        private static readonly CancellationToken emptyCancellationToken = new CancellationToken();
+        private static readonly CancellationToken _emptyCancellationToken = new CancellationToken();
 
-        private readonly SemaphoreSlim takeLock = new SemaphoreSlim(1, 1);
-        private readonly SemaphoreSlim putLock = new SemaphoreSlim(1, 1);
-        private readonly AsyncBarrier barrier = new AsyncBarrier(2);
-        private readonly MVar<T> valueCell = new MVar<T>();
+        private readonly SemaphoreSlim _takeLock = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _putLock = new SemaphoreSlim(1, 1);
+        private readonly AsyncBarrier _barrier = new AsyncBarrier(2);
+        private readonly MVar<T> _valueCell = new MVar<T>();
 
-        public PotentialValue<T> TryPeek() => valueCell.TryPeek();
-        public T Peek() => valueCell.Peek();
-        public T Peek(CancellationToken cancellationToken) => valueCell.Peek(cancellationToken);
-        public Task<T> PeekAsync() => valueCell.PeekAsync();
-        public Task<T> PeekAsync(CancellationToken cancellationToken) => valueCell.PeekAsync();
+        public PotentialValue<T> TryPeek() => _valueCell.TryPeek();
 
-        public PotentialValue<T> TryTake() => TryTake(false, emptyCancellationToken);
-        public T Take() => TryTake(true, emptyCancellationToken).Value;
-        public T Take(CancellationToken cancellationToken) => TryTake(true, cancellationToken).Value;
+        public T Peek() => Peek(_emptyCancellationToken);
+        public T Peek(CancellationToken cancellationToken) => _valueCell.Peek(cancellationToken);
 
-        private PotentialValue<T> TryTake(bool wait, CancellationToken cancellationToken)
+        public Task<T> PeekAsync() => PeekAsync(_emptyCancellationToken);
+        public Task<T> PeekAsync(CancellationToken cancellationToken) => _valueCell.PeekAsync(cancellationToken);
+
+        public PotentialValue<T> TryTake()
         {
-            var timeout = wait ? Timeout.Infinite : 0;
-            if (!takeLock.Wait(timeout, cancellationToken)) return PotentialValue<T>.WithoutValue();
-            try
+            var result = PotentialValue<T>.WithoutValue();
+
+            if (_takeLock.Wait(0))
             {
-                if (barrier.SignalAndWait(timeout, cancellationToken))
+                if (_barrier.SignalAndWait(0, _emptyCancellationToken))
                 {
-                    var value = valueCell.Take();
-                    return PotentialValue<T>.WithValue(value);
+                    var value = _valueCell.Take();
+                    result = PotentialValue<T>.WithValue(value);
                 }
 
-                return PotentialValue<T>.WithoutValue();
+                _takeLock.Release();
+            }
+
+            return result;
+        }
+
+        public T Take() => Take(_emptyCancellationToken);
+        public T Take(CancellationToken cancellationToken)
+        {
+            _takeLock.Wait(cancellationToken);
+            try
+            {
+                _barrier.SignalAndWait(Timeout.Infinite, cancellationToken);
+                return _valueCell.Take();
             }
             finally
             {
-                takeLock.Release();
+                _takeLock.Release();
             }
         }
 
-        public Task<T> TakeAsync() => TakeAsync(emptyCancellationToken);
-
+        public Task<T> TakeAsync() => TakeAsync(_emptyCancellationToken);
         public async Task<T> TakeAsync(CancellationToken cancellationToken)
         {
-            await takeLock.WaitAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
+            await _takeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                await barrier.SignalAndWaitAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
-                return valueCell.Take();
+                await _barrier.SignalAndWaitAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
+                return _valueCell.Take();
             }
             finally
             {
-                takeLock.Release();
+                _takeLock.Release();
             }
         }
 
-        public bool TryPut(T value) => TryPut(value, false, emptyCancellationToken);
-        public void Put(T value) => TryPut(value, true, emptyCancellationToken);
-        public void Put(T value, CancellationToken cancellationToken) => TryPut(value, true, cancellationToken);
-
-        private bool TryPut(T value, bool wait, CancellationToken cancellationToken)
+        public bool TryPut(T value)
         {
-            var timeout = wait ? Timeout.Infinite : 0;
-            if (!putLock.Wait(timeout, cancellationToken)) return false;
-            try
+            var success = false;
+
+            if (_putLock.Wait(0))
             {
-                if (barrier.SignalAndWait(timeout, cancellationToken))
+                if (_barrier.SignalAndWait(0, _emptyCancellationToken))
                 {
-                    valueCell.Put(value);
-                    return true;
+                    _valueCell.Put(value);
+                    success = true;
                 }
 
-                return false;
+                _putLock.Release();
+            }
+
+            return success;
+        }
+
+        public void Put(T value) => Put(value, _emptyCancellationToken);
+        public void Put(T value, CancellationToken cancellationToken)
+        {
+            _putLock.Wait(cancellationToken);
+            try
+            {
+                _barrier.SignalAndWait(Timeout.Infinite, cancellationToken);
+                _valueCell.Put(value);
             }
             finally
             {
-                putLock.Release();
+                _putLock.Release();
             }
         }
 
-        public Task PutAsync(T value) => PutAsync(value, emptyCancellationToken);
-
+        public Task PutAsync(T value) => PutAsync(value, _emptyCancellationToken);
         public async Task PutAsync(T value, CancellationToken cancellationToken)
         {
-            await putLock.WaitAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
+            await _putLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                await barrier.SignalAndWaitAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
-                valueCell.Put(value);
+                await _barrier.SignalAndWaitAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
+                _valueCell.Put(value);
             }
             finally
             {
-                putLock.Release();
+                _putLock.Release();
             }
         }
     }
