@@ -7,156 +7,156 @@ namespace Channels
     {
         private static readonly CancellationToken _emptyCancellationToken = new CancellationToken();
 
-        private readonly MVar<MVar<Node>> _incomingCell;
-        private readonly MVar<MVar<Node>> _outgoingCell;
+        private readonly MVar<MVar<Node>> _writeCell;
+        private readonly MVar<MVar<Node>> _readCell;
 
         public UnboundedChannel()
         {
             var stream = new MVar<Node>();
-            _incomingCell = new MVar<MVar<Node>>(stream);
-            _outgoingCell = new MVar<MVar<Node>>(stream);
+            _writeCell = new MVar<MVar<Node>>(stream);
+            _readCell = new MVar<MVar<Node>>(stream);
         }
 
-        public PotentialValue<T> TryPeek()
+        public PotentialValue<T> TryInspect()
         {
             var result = PotentialValue<T>.WithoutValue();
 
             MVar<Node> stream;
-            if (_outgoingCell.TryTake().TryGetValue(out stream))
+            if (_readCell.TryRead().TryGetValue(out stream))
             {
                 Node node;
-                if (stream.TryPeek().TryGetValue(out node))
+                if (stream.TryInspect().TryGetValue(out node))
                 {
                     result = PotentialValue<T>.WithValue(node.Value);
                 }
 
-                _outgoingCell.Put(stream);
+                _readCell.Write(stream);
             }
 
             return result;
         }
 
-        public T Peek() => Peek(_emptyCancellationToken);
-        public T Peek(CancellationToken cancellationToken)
+        public T Inspect() => Inspect(_emptyCancellationToken);
+        public T Inspect(CancellationToken cancellationToken)
         {
-            var stream = _outgoingCell.Take(cancellationToken);
+            var stream = _readCell.Read(cancellationToken);
             try
             {
-                var node = stream.Peek(cancellationToken);
+                var node = stream.Inspect(cancellationToken);
                 return node.Value;
             }
             finally
             {
-                _outgoingCell.Put(stream);
+                _readCell.Write(stream);
             }
         }
 
-        public Task<T> PeekAsync() => PeekAsync(_emptyCancellationToken);
-        public async Task<T> PeekAsync(CancellationToken cancellationToken)
+        public Task<T> InspectAsync() => InspectAsync(_emptyCancellationToken);
+        public async Task<T> InspectAsync(CancellationToken cancellationToken)
         {
-            var stream = await _outgoingCell.TakeAsync(cancellationToken).ConfigureAwait(false);
+            var stream = await _readCell.ReadAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                var node = await stream.PeekAsync(cancellationToken).ConfigureAwait(false);
+                var node = await stream.InspectAsync(cancellationToken).ConfigureAwait(false);
                 return node.Value;
             }
             finally
             {
-                _outgoingCell.Put(stream);
+                _readCell.Write(stream);
             }
         }
 
-        public PotentialValue<T> TryTake()
+        public PotentialValue<T> TryRead()
         {
             var result = PotentialValue<T>.WithoutValue();
 
             MVar<Node> stream;
-            if (_outgoingCell.TryTake().TryGetValue(out stream))
+            if (_readCell.TryRead().TryGetValue(out stream))
             {
                 Node node;
-                if (stream.TryTake().TryGetValue(out node))
+                if (stream.TryRead().TryGetValue(out node))
                 {
-                    _outgoingCell.Put(node.Next);
+                    _readCell.Write(node.Next);
                     result = PotentialValue<T>.WithValue(node.Value);
                 }
                 else
                 {
-                    _outgoingCell.Put(stream);
+                    _readCell.Write(stream);
                 }
             }
 
             return result;
         }
 
-        public T Take() => Take(_emptyCancellationToken);
-        public T Take(CancellationToken cancellationToken)
+        public T Read() => Read(_emptyCancellationToken);
+        public T Read(CancellationToken cancellationToken)
         {
-            var stream = _outgoingCell.Take(cancellationToken);
+            var stream = _readCell.Read(cancellationToken);
             try
             {
-                var node = stream.Take(cancellationToken);
-                _outgoingCell.Put(node.Next);
+                var node = stream.Read(cancellationToken);
+                _readCell.Write(node.Next);
                 return node.Value;
             }
             catch
             {
-                _outgoingCell.Put(stream);
+                _readCell.Write(stream);
                 throw;
             }
         }
 
-        public Task<T> TakeAsync() => TakeAsync(_emptyCancellationToken);
-        public async Task<T> TakeAsync(CancellationToken cancellationToken)
+        public Task<T> ReadAsync() => ReadAsync(_emptyCancellationToken);
+        public async Task<T> ReadAsync(CancellationToken cancellationToken)
         {
-            var stream = await _outgoingCell.TakeAsync(cancellationToken).ConfigureAwait(false);
+            var stream = await _readCell.ReadAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                var node = await stream.TakeAsync(cancellationToken).ConfigureAwait(false);
-                _outgoingCell.Put(node.Next);
+                var node = await stream.ReadAsync(cancellationToken).ConfigureAwait(false);
+                _readCell.Write(node.Next);
                 return node.Value;
             }
             catch
             {
-                _outgoingCell.Put(stream);
+                _readCell.Write(stream);
                 throw;
             }
         }
 
-        public bool TryPut(T value)
+        public bool TryWrite(T value)
         {
             var success = false;
 
             MVar<Node> stream;
-            if (_incomingCell.TryTake().TryGetValue(out stream))
+            if (_writeCell.TryRead().TryGetValue(out stream))
             {
                 var next = new MVar<Node>();
                 var node = new Node(value, next);
-                stream.Put(node);
-                _incomingCell.Put(next);
+                stream.Write(node);
+                _writeCell.Write(next);
                 success = true;
             }
 
             return success;
         }
 
-        public void Put(T value) => Put(value, _emptyCancellationToken);
-        public void Put(T value, CancellationToken cancellationToken)
+        public void Write(T value) => Write(value, _emptyCancellationToken);
+        public void Write(T value, CancellationToken cancellationToken)
         {
-            var stream = _incomingCell.Take(cancellationToken);
+            var stream = _writeCell.Read(cancellationToken);
             var next = new MVar<Node>();
             var node = new Node(value, next);
-            stream.Put(node);
-            _incomingCell.Put(next);
+            stream.Write(node);
+            _writeCell.Write(next);
         }
 
-        public Task PutAsync(T value) => PutAsync(value, _emptyCancellationToken);
-        public async Task PutAsync(T value, CancellationToken cancellationToken)
+        public Task WriteAsync(T value) => WriteAsync(value, _emptyCancellationToken);
+        public async Task WriteAsync(T value, CancellationToken cancellationToken)
         {
-            var stream = await _incomingCell.TakeAsync(cancellationToken).ConfigureAwait(false);
+            var stream = await _writeCell.ReadAsync(cancellationToken).ConfigureAwait(false);
             var next = new MVar<Node>();
             var node = new Node(value, next);
-            stream.Put(node);
-            _incomingCell.Put(next);
+            stream.Write(node);
+            _writeCell.Write(next);
         }
 
         private struct Node

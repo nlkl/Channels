@@ -41,9 +41,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncBarrier.cs" />
-    <Compile Include="ITakeable.cs" />
-    <Compile Include="IPeekable.cs" />
-    <Compile Include="IPuttable.cs" />
+    <Compile Include="IReadableChannel.cs" />
+    <Compile Include="IInspectableChannel.cs" />
+    <Compile Include="IWritableChannel.cs" />
     <Compile Include="SynchronousChannel.cs" />
     <Compile Include="BufferedChannel.cs" />
     <Compile Include="UnboundedChannel.cs" />

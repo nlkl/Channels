@@ -8,112 +8,112 @@ namespace Channels
     {
         private static readonly CancellationToken _emptyCancellationToken = new CancellationToken();
 
-        private readonly SemaphoreSlim _takeLock = new SemaphoreSlim(1, 1);
-        private readonly SemaphoreSlim _putLock = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _readLock = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _writeLock = new SemaphoreSlim(1, 1);
         private readonly AsyncBarrier _barrier = new AsyncBarrier(2);
         private readonly MVar<T> _valueCell = new MVar<T>();
 
-        public PotentialValue<T> TryPeek() => _valueCell.TryPeek();
+        public PotentialValue<T> TryInspect() => _valueCell.TryInspect();
 
-        public T Peek() => Peek(_emptyCancellationToken);
-        public T Peek(CancellationToken cancellationToken) => _valueCell.Peek(cancellationToken);
+        public T Inspect() => Inspect(_emptyCancellationToken);
+        public T Inspect(CancellationToken cancellationToken) => _valueCell.Inspect(cancellationToken);
 
-        public Task<T> PeekAsync() => PeekAsync(_emptyCancellationToken);
-        public Task<T> PeekAsync(CancellationToken cancellationToken) => _valueCell.PeekAsync(cancellationToken);
+        public Task<T> InspectAsync() => InspectAsync(_emptyCancellationToken);
+        public Task<T> InspectAsync(CancellationToken cancellationToken) => _valueCell.InspectAsync(cancellationToken);
 
-        public PotentialValue<T> TryTake()
+        public PotentialValue<T> TryRead()
         {
             var result = PotentialValue<T>.WithoutValue();
 
-            if (_takeLock.Wait(0))
+            if (_readLock.Wait(0))
             {
                 if (_barrier.SignalAndWait(0, _emptyCancellationToken))
                 {
-                    var value = _valueCell.Take();
+                    var value = _valueCell.Read();
                     result = PotentialValue<T>.WithValue(value);
                 }
 
-                _takeLock.Release();
+                _readLock.Release();
             }
 
             return result;
         }
 
-        public T Take() => Take(_emptyCancellationToken);
-        public T Take(CancellationToken cancellationToken)
+        public T Read() => Read(_emptyCancellationToken);
+        public T Read(CancellationToken cancellationToken)
         {
-            _takeLock.Wait(cancellationToken);
+            _readLock.Wait(cancellationToken);
             try
             {
                 _barrier.SignalAndWait(Timeout.Infinite, cancellationToken);
-                return _valueCell.Take();
+                return _valueCell.Read();
             }
             finally
             {
-                _takeLock.Release();
+                _readLock.Release();
             }
         }
 
-        public Task<T> TakeAsync() => TakeAsync(_emptyCancellationToken);
-        public async Task<T> TakeAsync(CancellationToken cancellationToken)
+        public Task<T> ReadAsync() => ReadAsync(_emptyCancellationToken);
+        public async Task<T> ReadAsync(CancellationToken cancellationToken)
         {
-            await _takeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _readLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 await _barrier.SignalAndWaitAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
-                return _valueCell.Take();
+                return _valueCell.Read();
             }
             finally
             {
-                _takeLock.Release();
+                _readLock.Release();
             }
         }
 
-        public bool TryPut(T value)
+        public bool TryWrite(T value)
         {
             var success = false;
 
-            if (_putLock.Wait(0))
+            if (_writeLock.Wait(0))
             {
                 if (_barrier.SignalAndWait(0, _emptyCancellationToken))
                 {
-                    _valueCell.Put(value);
+                    _valueCell.Write(value);
                     success = true;
                 }
 
-                _putLock.Release();
+                _writeLock.Release();
             }
 
             return success;
         }
 
-        public void Put(T value) => Put(value, _emptyCancellationToken);
-        public void Put(T value, CancellationToken cancellationToken)
+        public void Write(T value) => Write(value, _emptyCancellationToken);
+        public void Write(T value, CancellationToken cancellationToken)
         {
-            _putLock.Wait(cancellationToken);
+            _writeLock.Wait(cancellationToken);
             try
             {
                 _barrier.SignalAndWait(Timeout.Infinite, cancellationToken);
-                _valueCell.Put(value);
+                _valueCell.Write(value);
             }
             finally
             {
-                _putLock.Release();
+                _writeLock.Release();
             }
         }
 
-        public Task PutAsync(T value) => PutAsync(value, _emptyCancellationToken);
-        public async Task PutAsync(T value, CancellationToken cancellationToken)
+        public Task WriteAsync(T value) => WriteAsync(value, _emptyCancellationToken);
+        public async Task WriteAsync(T value, CancellationToken cancellationToken)
         {
-            await _putLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 await _barrier.SignalAndWaitAsync(Timeout.Infinite, cancellationToken).ConfigureAwait(false);
-                _valueCell.Put(value);
+                _valueCell.Write(value);
             }
             finally
             {
-                _putLock.Release();
+                _writeLock.Release();
             }
         }
     }

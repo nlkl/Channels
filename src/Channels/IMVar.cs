@@ -5,19 +5,19 @@ namespace Channels
 {
     public interface IMVar<T> : IChannel<T>
     {
-        PotentialValue<T> TryPeek(int millisecondsTimeout);
-        PotentialValue<T> TryPeek(int millisecondsTimeout, CancellationToken cancellationToken);
-        Task<PotentialValue<T>> TryPeekAsync(int millisecondsTimeout);
-        Task<PotentialValue<T>> TryPeekAsync(int millisecondsTimeout, CancellationToken cancellationToken);
+        PotentialValue<T> TryInspect(int millisecondsTimeout);
+        PotentialValue<T> TryInspect(int millisecondsTimeout, CancellationToken cancellationToken);
+        Task<PotentialValue<T>> TryInspectAsync(int millisecondsTimeout);
+        Task<PotentialValue<T>> TryInspectAsync(int millisecondsTimeout, CancellationToken cancellationToken);
 
-        PotentialValue<T> TryTake(int millisecondsTimeout);
-        PotentialValue<T> TryTake(int millisecondsTimeout, CancellationToken cancellationToken);
-        Task<PotentialValue<T>> TryTakeAsync(int millisecondsTimeout);
-        Task<PotentialValue<T>> TryTakeAsync(int millisecondsTimeout, CancellationToken cancellationToken);
+        PotentialValue<T> TryRead(int millisecondsTimeout);
+        PotentialValue<T> TryRead(int millisecondsTimeout, CancellationToken cancellationToken);
+        Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout);
+        Task<PotentialValue<T>> TryReadAsync(int millisecondsTimeout, CancellationToken cancellationToken);
 
-        bool TryPut(T value, int millisecondsTimeout);
-        bool TryPut(T value, int millisecondsTimeout, CancellationToken cancellationToken);
-        Task<bool> TryPutAsync(T value, int millisecondsTimeout);
-        Task<bool> TryPutAsync(T value, int millisecondsTimeout, CancellationToken cancellationToken);
+        bool TryWrite(T value, int millisecondsTimeout);
+        bool TryWrite(T value, int millisecondsTimeout, CancellationToken cancellationToken);
+        Task<bool> TryWriteAsync(T value, int millisecondsTimeout);
+        Task<bool> TryWriteAsync(T value, int millisecondsTimeout, CancellationToken cancellationToken);
     }
 }

@@ -9,8 +9,8 @@ namespace Channels
         private static readonly CancellationToken _emptyCancellationToken = new CancellationToken();
 
         private readonly int _capacity;
-        private readonly MVar<int> _incomingIndexCell;
-        private readonly MVar<int> _outgoingIndexCell;
+        private readonly MVar<int> _writeIndexCell;
+        private readonly MVar<int> _readIndexCell;
         private readonly MVar<T>[] _buffer;
 
         public BufferedChannel(int capacity)
@@ -18,8 +18,8 @@ namespace Channels
             if (capacity < 1) throw new ArgumentException(nameof(capacity), "Buffer must have a capacity greater than zero.");
 
             _capacity = capacity;
-            _incomingIndexCell = new MVar<int>(0);
-            _outgoingIndexCell = new MVar<int>(0);
+            _writeIndexCell = new MVar<int>(0);
+            _readIndexCell = new MVar<int>(0);
 
             _buffer = new MVar<T>[capacity];
             for (int i = 0; i < _buffer.Length; i++)
@@ -28,162 +28,162 @@ namespace Channels
             }
         }
 
-        public PotentialValue<T> TryPeek()
+        public PotentialValue<T> TryInspect()
         {
             var result = PotentialValue<T>.WithoutValue();
 
             int index;
-            if (_outgoingIndexCell.TryTake().TryGetValue(out index))
+            if (_readIndexCell.TryRead().TryGetValue(out index))
             {
                 var valueCell = _buffer[index];
                 T value;
-                if (valueCell.TryPeek().TryGetValue(out value))
+                if (valueCell.TryInspect().TryGetValue(out value))
                 {
                     result = PotentialValue<T>.WithValue(value);
                 }
 
-                _outgoingIndexCell.Put(index);
+                _readIndexCell.Write(index);
             }
 
             return result;
         }
 
-        public T Peek() => Peek(_emptyCancellationToken);
-        public T Peek(CancellationToken cancellationToken)
+        public T Inspect() => Inspect(_emptyCancellationToken);
+        public T Inspect(CancellationToken cancellationToken)
         {
-            var index = _outgoingIndexCell.Take(cancellationToken);
+            var index = _readIndexCell.Read(cancellationToken);
             try
             {
                 var valueCell = _buffer[index];
-                var value = valueCell.Peek(cancellationToken);
+                var value = valueCell.Inspect(cancellationToken);
                 return value;
             }
             finally
             {
-                _outgoingIndexCell.Put(index);
+                _readIndexCell.Write(index);
             }
         }
 
-        public Task<T> PeekAsync() => PeekAsync(_emptyCancellationToken);
-        public async Task<T> PeekAsync(CancellationToken cancellationToken)
+        public Task<T> InspectAsync() => InspectAsync(_emptyCancellationToken);
+        public async Task<T> InspectAsync(CancellationToken cancellationToken)
         {
-            var index = await _outgoingIndexCell.TakeAsync(cancellationToken).ConfigureAwait(false);
+            var index = await _readIndexCell.ReadAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 var valueCell = _buffer[index];
-                var value = await valueCell.PeekAsync(cancellationToken).ConfigureAwait(false);
+                var value = await valueCell.InspectAsync(cancellationToken).ConfigureAwait(false);
                 return value;
             }
             finally
             {
-                _outgoingIndexCell.Put(index);
+                _readIndexCell.Write(index);
             }
         }
 
-        public PotentialValue<T> TryTake()
+        public PotentialValue<T> TryRead()
         {
             var result = PotentialValue<T>.WithoutValue();
 
             int index;
-            if (_outgoingIndexCell.TryTake().TryGetValue(out index))
+            if (_readIndexCell.TryRead().TryGetValue(out index))
             {
                 var valueCell = _buffer[index];
                 T value;
-                if (valueCell.TryTake().TryGetValue(out value))
+                if (valueCell.TryRead().TryGetValue(out value))
                 {
                     index = NextIndex(index);
                     result = PotentialValue<T>.WithValue(value);
                 }
 
-                _outgoingIndexCell.Put(index);
+                _readIndexCell.Write(index);
             }
 
             return result;
         }
 
-        public T Take() => Take(_emptyCancellationToken);
-        public T Take(CancellationToken cancellationToken)
+        public T Read() => Read(_emptyCancellationToken);
+        public T Read(CancellationToken cancellationToken)
         {
-            var index = _outgoingIndexCell.Take(cancellationToken);
+            var index = _readIndexCell.Read(cancellationToken);
             try
             {
                 var valueCell = _buffer[index];
-                var value = valueCell.Take(cancellationToken);
+                var value = valueCell.Read(cancellationToken);
                 index = NextIndex(index);
                 return value;
             }
             finally
             {
-                _outgoingIndexCell.Put(index);
+                _readIndexCell.Write(index);
             }
         }
 
-        public Task<T> TakeAsync() => TakeAsync(_emptyCancellationToken);
-        public async Task<T> TakeAsync(CancellationToken cancellationToken)
+        public Task<T> ReadAsync() => ReadAsync(_emptyCancellationToken);
+        public async Task<T> ReadAsync(CancellationToken cancellationToken)
         {
-            var index = await _outgoingIndexCell.TakeAsync(cancellationToken).ConfigureAwait(false);
+            var index = await _readIndexCell.ReadAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 var valueCell = _buffer[index];
-                var value = await valueCell.TakeAsync(cancellationToken).ConfigureAwait(false);
+                var value = await valueCell.ReadAsync(cancellationToken).ConfigureAwait(false);
                 index = NextIndex(index);
                 return value;
             }
             finally
             {
-                _outgoingIndexCell.Put(index);
+                _readIndexCell.Write(index);
             }
         }
 
-        public bool TryPut(T value)
+        public bool TryWrite(T value)
         {
             var success = false;
 
             int index;
-            if (_incomingIndexCell.TryTake().TryGetValue(out index))
+            if (_writeIndexCell.TryRead().TryGetValue(out index))
             {
                 var valueCell = _buffer[index];
-                if (valueCell.TryPut(value))
+                if (valueCell.TryWrite(value))
                 {
                     index = NextIndex(index);
                     success = true;
                 }
 
-                _incomingIndexCell.Put(index);
+                _writeIndexCell.Write(index);
             }
 
             return success;
         }
 
-        public void Put(T value) => Put(value, _emptyCancellationToken);
-        public void Put(T value, CancellationToken cancellationToken)
+        public void Write(T value) => Write(value, _emptyCancellationToken);
+        public void Write(T value, CancellationToken cancellationToken)
         {
-            var index = _incomingIndexCell.Take(cancellationToken);
+            var index = _writeIndexCell.Read(cancellationToken);
             try
             {
                 var valueCell = _buffer[index];
-                valueCell.Put(value, cancellationToken);
+                valueCell.Write(value, cancellationToken);
                 index = NextIndex(index);
             }
             finally
             {
-                _incomingIndexCell.Put(index);
+                _writeIndexCell.Write(index);
             }
         }
 
-        public Task PutAsync(T value) => PutAsync(value, _emptyCancellationToken);
-        public async Task PutAsync(T value, CancellationToken cancellationToken)
+        public Task WriteAsync(T value) => WriteAsync(value, _emptyCancellationToken);
+        public async Task WriteAsync(T value, CancellationToken cancellationToken)
         {
-            var index = await _incomingIndexCell.TakeAsync(cancellationToken).ConfigureAwait(false);
+            var index = await _writeIndexCell.ReadAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 var valueCell = _buffer[index];
-                await valueCell.PutAsync(value, cancellationToken).ConfigureAwait(false);
+                await valueCell.WriteAsync(value, cancellationToken).ConfigureAwait(false);
                 index = NextIndex(index);
             }
             finally
             {
-                _incomingIndexCell.Put(index);
+                _writeIndexCell.Write(index);
             }
         }
 

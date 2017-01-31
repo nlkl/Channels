@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Channels
 {
-    public interface IChannel<T> : IPuttable<T>, ITakeable<T>, IPeekable<T>
+    public interface IChannel<T> : IWritableChannel<T>, IReadableChannel<T>, IInspectableChannel<T>
     {
     }
 }
