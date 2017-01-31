@@ -13,13 +13,20 @@ namespace Channels.Sandbox
         public static void Main()
         {
             Console.WriteLine("= TESTING MVAR =");
-            TestChannel(new MVar<int>());
+            //TestChannel(new MVar<int>());
+            TestChannelBound(new MVar<int>());
 
             Console.WriteLine("= TESTING UNBOUNDED CHANNEL =");
-            TestChannel(new UnboundedChannel<int>());
+            //TestChannel(new UnboundedChannel<int>());
+            TestChannelBound(new UnboundedChannel<int>());
 
             Console.WriteLine("= TESTING SYNCHRONOUS CHANNEL =");
-            TestChannel(new SynchronousChannel<int>());
+            //TestChannel(new SynchronousChannel<int>());
+            TestChannelBound(new SynchronousChannel<int>());
+
+            Console.WriteLine("= TESTING BUFFERED CHANNEL (3) =");
+            //TestChannel(new BufferedChannel<int>(3));
+            TestChannelBound(new BufferedChannel<int>(3));
 
             Console.ReadKey();
         }
@@ -76,6 +83,41 @@ namespace Channels.Sandbox
             var value = mvar.Take();
             sw.Stop();
             Console.WriteLine($"T: Successfully took value '{value}' in {sw.ElapsedMilliseconds} ms from thread {threadId}");
+        }
+
+        public static void TestChannelBound(IChannel<int> channel)
+        {
+            try
+            {
+                for (int i = 1; i < 10; i++)
+                {
+                    var cancellationTokenSource = new CancellationTokenSource(500);
+                    channel.Put(i, cancellationTokenSource.Token);
+                    Console.WriteLine($"Put: {i}");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("Cancelled puts");
+            }
+
+            try
+            {
+                for (int i = 1; i < 10; i++)
+                {
+                    var cancellationTokenSource = new CancellationTokenSource(500);
+                    var value = channel.Take(cancellationTokenSource.Token);
+                    Console.WriteLine($"Took: {value}");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("Cancelled takes");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("= DONE =");
+            Console.WriteLine();
         }
     }
 }
