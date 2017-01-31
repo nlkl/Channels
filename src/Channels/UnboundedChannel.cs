@@ -5,43 +5,41 @@ namespace Channels
 {
     public class UnboundedChannel<T> : IChannel<T>
     {
-        private readonly MVar<MVar<Node>> incoming;
-        private readonly MVar<MVar<Node>> outgoing;
+        private static readonly CancellationToken _emptyCancellationToken = new CancellationToken();
+
+        private readonly MVar<MVar<Node>> _incomingCell;
+        private readonly MVar<MVar<Node>> _outgoingCell;
 
         public UnboundedChannel()
         {
             var stream = new MVar<Node>();
-            incoming = new MVar<MVar<Node>>(stream);
-            outgoing = new MVar<MVar<Node>>(stream);
+            _incomingCell = new MVar<MVar<Node>>(stream);
+            _outgoingCell = new MVar<MVar<Node>>(stream);
         }
 
         public PotentialValue<T> TryPeek()
         {
-            var stream = outgoing.TryTake();
-            if (!stream.HasValue) return PotentialValue<T>.WithoutValue();
+            var result = PotentialValue<T>.WithoutValue();
 
-            var value = PotentialValue<T>.WithoutValue();
-            var node = stream.Value.TryPeek();
-            if (node.HasValue)
+            MVar<Node> stream;
+            if (_outgoingCell.TryTake().TryGetValue(out stream))
             {
-                value = PotentialValue<T>.WithValue(node.Value.Value);
+                Node node;
+                if (stream.TryPeek().TryGetValue(out node))
+                {
+                    result = PotentialValue<T>.WithValue(node.Value);
+                }
+
+                _outgoingCell.Put(stream);
             }
-            outgoing.Put(stream.Value);
 
-            return value;
+            return result;
         }
 
-        public T Peek()
-        {
-            var stream = outgoing.Take();
-            var node = stream.Peek();
-            outgoing.Put(stream);
-            return node.Value;
-        }
-
+        public T Peek() => Peek(_emptyCancellationToken);
         public T Peek(CancellationToken cancellationToken)
         {
-            var stream = outgoing.Take(cancellationToken);
+            var stream = _outgoingCell.Take(cancellationToken);
             try
             {
                 var node = stream.Peek(cancellationToken);
@@ -49,21 +47,14 @@ namespace Channels
             }
             finally
             {
-                outgoing.Put(stream);
+                _outgoingCell.Put(stream);
             }
         }
 
-        public async Task<T> PeekAsync()
-        {
-            var stream = await outgoing.TakeAsync().ConfigureAwait(false);
-            var node = await stream.PeekAsync().ConfigureAwait(false);
-            await outgoing.PutAsync(stream).ConfigureAwait(false);
-            return node.Value;
-        }
-
+        public Task<T> PeekAsync() => PeekAsync(_emptyCancellationToken);
         public async Task<T> PeekAsync(CancellationToken cancellationToken)
         {
-            var stream = await outgoing.TakeAsync(cancellationToken).ConfigureAwait(false);
+            var stream = await _outgoingCell.TakeAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 var node = await stream.PeekAsync(cancellationToken).ConfigureAwait(false);
@@ -71,149 +62,101 @@ namespace Channels
             }
             finally
             {
-                await outgoing.PutAsync(stream).ConfigureAwait(false);
+                _outgoingCell.Put(stream);
             }
         }
 
         public PotentialValue<T> TryTake()
         {
-            var stream = outgoing.TryTake();
-            if (!stream.HasValue) return PotentialValue<T>.WithoutValue();
+            var result = PotentialValue<T>.WithoutValue();
 
-            var value = PotentialValue<T>.WithoutValue();
-            var node = stream.Value.TryTake();
-            if (node.HasValue)
+            MVar<Node> stream;
+            if (_outgoingCell.TryTake().TryGetValue(out stream))
             {
-                value = PotentialValue<T>.WithValue(node.Value.Value);
-                outgoing.Put(node.Value.Next);
-            }
-            else
-            {
-                outgoing.Put(stream.Value);
+                Node node;
+                if (stream.TryTake().TryGetValue(out node))
+                {
+                    _outgoingCell.Put(node.Next);
+                    result = PotentialValue<T>.WithValue(node.Value);
+                }
+                else
+                {
+                    _outgoingCell.Put(stream);
+                }
             }
 
-            return value;
+            return result;
         }
 
-        public T Take()
-        {
-            var stream = outgoing.Take();
-            var node = stream.Take();
-            outgoing.Put(node.Next);
-            return node.Value;
-        }
-
+        public T Take() => Take(_emptyCancellationToken);
         public T Take(CancellationToken cancellationToken)
         {
-            var stream = outgoing.Take(cancellationToken);
+            var stream = _outgoingCell.Take(cancellationToken);
             try
             {
                 var node = stream.Take(cancellationToken);
-                outgoing.Put(node.Next);
+                _outgoingCell.Put(node.Next);
                 return node.Value;
             }
             catch
             {
-                outgoing.Put(stream);
+                _outgoingCell.Put(stream);
                 throw;
             }
         }
 
-        public async Task<T> TakeAsync()
-        {
-            var stream = await outgoing.TakeAsync().ConfigureAwait(false);
-            var node = await stream.TakeAsync().ConfigureAwait(false);
-            await outgoing.PutAsync(node.Next).ConfigureAwait(false);
-            return node.Value;
-        }
-
+        public Task<T> TakeAsync() => TakeAsync(_emptyCancellationToken);
         public async Task<T> TakeAsync(CancellationToken cancellationToken)
         {
-            var stream = await outgoing.TakeAsync(cancellationToken).ConfigureAwait(false);
+            var stream = await _outgoingCell.TakeAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 var node = await stream.TakeAsync(cancellationToken).ConfigureAwait(false);
-                await outgoing.PutAsync(node.Next).ConfigureAwait(false);
+                _outgoingCell.Put(node.Next);
                 return node.Value;
             }
             catch
             {
-                await outgoing.PutAsync(stream).ConfigureAwait(false);
+                _outgoingCell.Put(stream);
                 throw;
             }
         }
 
         public bool TryPut(T value)
         {
-            var stream = incoming.TryTake();
-            if (!stream.HasValue) return false;
+            var success = false;
 
-            var next = new MVar<Node>();
-            var node = new Node(value, next);
-
-            var success = stream.Value.TryPut(node);
-            if (success)
+            MVar<Node> stream;
+            if (_incomingCell.TryTake().TryGetValue(out stream))
             {
-                incoming.Put(next);
-            }
-            else
-            {
-                incoming.Put(stream.Value);
+                var next = new MVar<Node>();
+                var node = new Node(value, next);
+                stream.Put(node);
+                _incomingCell.Put(next);
+                success = true;
             }
 
             return success;
         }
 
-        public void Put(T value)
+        public void Put(T value) => Put(value, _emptyCancellationToken);
+        public void Put(T value, CancellationToken cancellationToken)
         {
-            var stream = incoming.Take();
+            var stream = _incomingCell.Take(cancellationToken);
             var next = new MVar<Node>();
             var node = new Node(value, next);
             stream.Put(node);
-            incoming.Put(next);
+            _incomingCell.Put(next);
         }
 
-        public void Put(T value, CancellationToken cancellationToken)
-        {
-            var stream = incoming.Take(cancellationToken);
-            try
-            {
-                var next = new MVar<Node>();
-                var node = new Node(value, next);
-                stream.Put(node, cancellationToken);
-                incoming.Put(next);
-            }
-            catch
-            {
-                incoming.Put(stream);
-                throw;
-            }
-        }
-
-        public async Task PutAsync(T value)
-        {
-            var stream = await incoming.TakeAsync().ConfigureAwait(false);
-            var next = new MVar<Node>();
-            var node = new Node(value, next);
-            await stream.PutAsync(node).ConfigureAwait(false);
-            await incoming.PutAsync(next).ConfigureAwait(false);
-        }
-
+        public Task PutAsync(T value) => PutAsync(value, _emptyCancellationToken);
         public async Task PutAsync(T value, CancellationToken cancellationToken)
         {
-            var stream = await incoming.TakeAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                var next = new MVar<Node>();
-                var node = new Node(value, next);
-                await stream.PutAsync(node, cancellationToken).ConfigureAwait(false);
-                await incoming.PutAsync(next).ConfigureAwait(false);
-            }
-            catch
-            {
-                await incoming.PutAsync(stream).ConfigureAwait(false);
-                throw;
-            }
+            var stream = await _incomingCell.TakeAsync(cancellationToken).ConfigureAwait(false);
+            var next = new MVar<Node>();
+            var node = new Node(value, next);
+            stream.Put(node);
+            _incomingCell.Put(next);
         }
 
         private struct Node
