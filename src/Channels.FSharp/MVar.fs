@@ -16,11 +16,14 @@ module MVar =
     let peekOrCancel (mvar : IMVar<'T>) (cancellationToken : CancellationToken) =
         mvar.Inspect(cancellationToken)
 
-    let asyncPeek (mvar : IMVar<'T>) =
+    let peekAsync (mvar : IMVar<'T>) =
         mvar.InspectAsync() |> Async.AwaitTask
 
-    let asyncPeekOrCancel (mvar : IMVar<'T>) (cancellationToken : CancellationToken) =
+    let peekOrCancelAsync (mvar : IMVar<'T>) (cancellationToken : CancellationToken) =
         mvar.InspectAsync(cancellationToken) |> Async.AwaitTask
+
+    let peekDeferredAsync (mvar : IMVar<'T>) =
+        Async.runDeferred (peekOrCancelAsync mvar)
 
     let tryTake (mvar : IMVar<'T>) =
         mvar.TryRead() |> PotentialValue.toOption
@@ -31,11 +34,14 @@ module MVar =
     let takeOrCancel (mvar : IMVar<'T>) (cancellationToken : CancellationToken) =
         mvar.Read(cancellationToken)
 
-    let asyncTake (mvar : IMVar<'T>) =
+    let takeAsync (mvar : IMVar<'T>) =
         mvar.ReadAsync() |> Async.AwaitTask
 
-    let asyncTakeOrCancel (mvar : IMVar<'T>) (cancellationToken : CancellationToken) =
+    let takeOrCancelAsync (mvar : IMVar<'T>) (cancellationToken : CancellationToken) =
         mvar.ReadAsync(cancellationToken) |> Async.AwaitTask
+
+    let takeDeferredAsync (mvar : IMVar<'T>) =
+        Async.runDeferred (takeOrCancelAsync mvar)
 
     let tryPut (mvar : IMVar<'T>) value =
         mvar.TryWrite(value)
@@ -46,9 +52,11 @@ module MVar =
     let putOrCancel (mvar : IMVar<'T>) value (cancellationToken : CancellationToken) =
         mvar.Write(value, cancellationToken)
 
-    let asyncPut (mvar : IMVar<'T>) value =
+    let putAsync (mvar : IMVar<'T>) value =
         mvar.WriteAsync(value) |> Async.AwaitTask
 
-    let asyncPutOrCancel (mvar : IMVar<'T>) value (cancellationToken : CancellationToken) =
+    let putOrCancelAsync (mvar : IMVar<'T>) value (cancellationToken : CancellationToken) =
         mvar.WriteAsync(value, cancellationToken) |> Async.AwaitTask
 
+    let putDeferredAsync (mvar : IMVar<'T>) value =
+        Async.runDeferred (putOrCancelAsync mvar value)

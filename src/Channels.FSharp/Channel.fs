@@ -17,11 +17,14 @@ module Channel =
     let inspectOrCancel (channel : IInspectableChannel<'T>) (cancellationToken : CancellationToken) =
         channel.Inspect(cancellationToken)
 
-    let asyncInspect (channel : IInspectableChannel<'T>) =
+    let inspectAsync (channel : IInspectableChannel<'T>) =
         channel.InspectAsync() |> Async.AwaitTask
 
-    let asyncInspectOrCancel (channel : IInspectableChannel<'T>) (cancellationToken : CancellationToken) =
+    let inspectOrCancelAsync (channel : IInspectableChannel<'T>) (cancellationToken : CancellationToken) =
         channel.InspectAsync(cancellationToken) |> Async.AwaitTask
+
+    let inspectDeferredAsync (channel : IInspectableChannel<'T>) =
+        Async.runDeferred (inspectOrCancelAsync channel)
 
     let tryRead (channel : IReadableChannel<'T>) =
         channel.TryRead() |> PotentialValue.toOption
@@ -32,11 +35,14 @@ module Channel =
     let readOrCancel (channel : IReadableChannel<'T>) (cancellationToken : CancellationToken) =
         channel.Read(cancellationToken)
 
-    let asyncRead (channel : IReadableChannel<'T>) =
+    let readAsync (channel : IReadableChannel<'T>) =
         channel.ReadAsync() |> Async.AwaitTask
 
-    let asyncReadOrCancel (channel : IReadableChannel<'T>) (cancellationToken : CancellationToken) =
+    let readOrCancelAsync (channel : IReadableChannel<'T>) (cancellationToken : CancellationToken) =
         channel.ReadAsync(cancellationToken) |> Async.AwaitTask
+
+    let readDeferredAsync (channel : IReadableChannel<'T>) =
+        Async.runDeferred (readOrCancelAsync channel)
 
     let tryWrite (channel : IWritableChannel<'T>) value =
         channel.TryWrite(value)
@@ -47,9 +53,11 @@ module Channel =
     let writeOrCancel (channel : IWritableChannel<'T>) value (cancellationToken : CancellationToken) =
         channel.Write(value, cancellationToken)
 
-    let asyncWrite (channel : IWritableChannel<'T>) value =
+    let writeAsync (channel : IWritableChannel<'T>) value =
         channel.WriteAsync(value) |> Async.AwaitTask
 
-    let asyncWriteOrCancel (channel : IWritableChannel<'T>) value (cancellationToken : CancellationToken) =
+    let writeOrCancelAsync (channel : IWritableChannel<'T>) value (cancellationToken : CancellationToken) =
         channel.WriteAsync(value, cancellationToken) |> Async.AwaitTask
 
+    let writeDeferredAsync (channel : IWritableChannel<'T>) value =
+        Async.runDeferred (writeOrCancelAsync channel value)

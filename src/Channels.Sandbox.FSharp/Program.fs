@@ -20,13 +20,13 @@ let main argv =
 
     let writeTask = async {
         for i in 0 .. 100 do
-            do! Channel.asyncWrite chan i
+            do! Channel.writeAsync chan i
             printfn "Wrote: %i" i
     }
 
     let readTask = async {
         for i in 0 .. 100 do
-            let! value = Channel.asyncRead chan
+            let! value = Channel.readAsync chan
             printfn "Read: %i" value
     }
 
