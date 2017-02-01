@@ -23,7 +23,7 @@ module MVar =
         mvar.InspectAsync(cancellationToken) |> Async.AwaitTask
 
     let peekDeferredAsync (mvar : IMVar<'T>) =
-        Async.runDeferred (peekOrCancelAsync mvar)
+        peekOrCancelAsync mvar |> Async.defer
 
     let tryTake (mvar : IMVar<'T>) =
         mvar.TryRead() |> PotentialValue.toOption
@@ -41,7 +41,7 @@ module MVar =
         mvar.ReadAsync(cancellationToken) |> Async.AwaitTask
 
     let takeDeferredAsync (mvar : IMVar<'T>) =
-        Async.runDeferred (takeOrCancelAsync mvar)
+        takeOrCancelAsync mvar |> Async.defer
 
     let tryPut (mvar : IMVar<'T>) value =
         mvar.TryWrite(value)
@@ -59,4 +59,4 @@ module MVar =
         mvar.WriteAsync(value, cancellationToken) |> Async.AwaitTask
 
     let putDeferredAsync (mvar : IMVar<'T>) value =
-        Async.runDeferred (putOrCancelAsync mvar value)
+        putOrCancelAsync mvar value |> Async.defer

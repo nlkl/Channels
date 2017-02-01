@@ -24,7 +24,7 @@ module Channel =
         channel.InspectAsync(cancellationToken) |> Async.AwaitTask
 
     let inspectDeferredAsync (channel : IInspectableChannel<'T>) =
-        Async.runDeferred (inspectOrCancelAsync channel)
+        inspectOrCancelAsync channel |> Async.defer
 
     let tryRead (channel : IReadableChannel<'T>) =
         channel.TryRead() |> PotentialValue.toOption
@@ -42,7 +42,7 @@ module Channel =
         channel.ReadAsync(cancellationToken) |> Async.AwaitTask
 
     let readDeferredAsync (channel : IReadableChannel<'T>) =
-        Async.runDeferred (readOrCancelAsync channel)
+        readOrCancelAsync channel |> Async.defer
 
     let tryWrite (channel : IWritableChannel<'T>) value =
         channel.TryWrite(value)
@@ -60,4 +60,4 @@ module Channel =
         channel.WriteAsync(value, cancellationToken) |> Async.AwaitTask
 
     let writeDeferredAsync (channel : IWritableChannel<'T>) value =
-        Async.runDeferred (writeOrCancelAsync channel value)
+        writeOrCancelAsync channel value |> Async.defer

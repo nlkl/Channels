@@ -2,7 +2,7 @@
 
 module internal Async =
 
-    let runDeferred run = 
+    let defer run = 
         async {
             let! cancellationToken = Async.CancellationToken
             return! run(cancellationToken)
