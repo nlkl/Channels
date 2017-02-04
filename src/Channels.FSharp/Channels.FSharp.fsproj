@@ -44,8 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Async.fs" />
-    <Compile Include="PotentialValue.fs" />
+    <Compile Include="Utilities.fs" />
     <Compile Include="MVar.fs" />
     <Compile Include="Channel.fs" />
   </ItemGroup>

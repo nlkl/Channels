@@ -10,7 +10,7 @@ module Channel =
     let createBuffered capacity = BufferedChannel<'T>(capacity) :> IChannel<'T>
 
     let tryInspect (channel : IInspectableChannel<'T>) =
-        channel.TryInspect() |> PotentialValue.toOption
+        channel.TryInspect() |> Option.fromCSharpOption
 
     let inspect (channel : IInspectableChannel<'T>) =
         channel.Inspect()
@@ -28,7 +28,7 @@ module Channel =
         inspectOrCancelAsync channel |> Async.defer
 
     let tryRead (channel : IReadableChannel<'T>) =
-        channel.TryRead() |> PotentialValue.toOption
+        channel.TryRead() |> Option.fromCSharpOption
 
     let read (channel : IReadableChannel<'T>) =
         channel.Read()

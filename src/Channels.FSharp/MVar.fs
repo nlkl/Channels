@@ -8,7 +8,7 @@ module MVar =
     let create value = MVar<'T>(value) :> IMVar<'T>
 
     let tryPeek (mvar : IMVar<'T>) =
-        mvar.TryInspect() |> PotentialValue.toOption
+        mvar.TryInspect() |> Option.fromCSharpOption
 
     let peek (mvar : IMVar<'T>) =
         mvar.Inspect()
@@ -26,7 +26,7 @@ module MVar =
         peekOrCancelAsync mvar |> Async.defer
 
     let tryTake (mvar : IMVar<'T>) =
-        mvar.TryRead() |> PotentialValue.toOption
+        mvar.TryRead() |> Option.fromCSharpOption
 
     let take (mvar : IMVar<'T>) =
         mvar.Read()
