@@ -6,6 +6,7 @@ open System.Threading
 module Channel = 
     let createSynchronous () = SynchronousChannel<'T>() :> IChannel<'T>
     let createUnbounded () = UnboundedChannel<'T>() :> IChannel<'T>
+    let createBounded capacity = BoundedChannel<'T>(capacity) :> IChannel<'T>
     let createBuffered capacity = BufferedChannel<'T>(capacity) :> IChannel<'T>
 
     let tryInspect (channel : IInspectableChannel<'T>) =

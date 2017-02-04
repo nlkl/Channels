@@ -12,21 +12,25 @@ namespace Channels.Sandbox
     {
         public static void Main()
         {
-            Console.WriteLine("= TESTING MVAR =");
-            TestChannel(new MVar<int>());
-            TestChannelBound(new MVar<int>());
+            //Console.WriteLine("= TESTING MVAR =");
+            //TestChannel(new MVar<int>());
+            //TestChannelBound(new MVar<int>());
 
-            Console.WriteLine("= TESTING UNBOUNDED CHANNEL =");
-            TestChannel(new UnboundedChannel<int>());
-            TestChannelBound(new UnboundedChannel<int>());
+            //Console.WriteLine("= TESTING UNBOUNDED CHANNEL =");
+            //TestChannel(new UnboundedChannel<int>());
+            //TestChannelBound(new UnboundedChannel<int>());
 
-            Console.WriteLine("= TESTING SYNCHRONOUS CHANNEL =");
-            TestChannel(new SynchronousChannel<int>());
-            TestChannelBound(new SynchronousChannel<int>());
+            //Console.WriteLine("= TESTING SYNCHRONOUS CHANNEL =");
+            //TestChannel(new SynchronousChannel<int>());
+            //TestChannelBound(new SynchronousChannel<int>());
 
-            Console.WriteLine("= TESTING BUFFERED CHANNEL (3) =");
-            TestChannel(new BufferedChannel<int>(3));
-            TestChannelBound(new BufferedChannel<int>(3));
+            //Console.WriteLine("= TESTING BUFFERED CHANNEL (3) =");
+            //TestChannel(new BufferedChannel<int>(3));
+            //TestChannelBound(new BufferedChannel<int>(3));
+
+            Console.WriteLine("= TESTING BOUNDED CHANNEL (3) =");
+            TestChannel(new BoundedChannel<int>(3));
+            TestChannelBound(new BoundedChannel<int>(3));
 
             Console.ReadKey();
         }
