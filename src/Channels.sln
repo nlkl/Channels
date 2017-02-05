@@ -13,6 +13,12 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Channels.FSharp", "Channels
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Channels.Sandbox.FSharp", "Channels.Sandbox.FSharp\Channels.Sandbox.FSharp.fsproj", "{F37556E9-1594-44FE-BD9A-9673668958EE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Channels.Tests", "Channels.Tests\Channels.Tests.csproj", "{7B0A923B-7675-4C74-98C4-0A395A86C73E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sandbox", "Sandbox", "{E2411B36-5AD9-4225-9C07-1B23C09CD64D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", "{284A12E9-0879-4358-82A9-495A4001AAD0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,12 +41,17 @@ Global
 		{F37556E9-1594-44FE-BD9A-9673668958EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F37556E9-1594-44FE-BD9A-9673668958EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F37556E9-1594-44FE-BD9A-9673668958EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B0A923B-7675-4C74-98C4-0A395A86C73E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B0A923B-7675-4C74-98C4-0A395A86C73E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B0A923B-7675-4C74-98C4-0A395A86C73E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B0A923B-7675-4C74-98C4-0A395A86C73E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{3DC3750E-C4E0-489A-872B-EE42936B8DF5} = {D4E75888-0695-483C-A863-B1C9C584A316}
-		{F37556E9-1594-44FE-BD9A-9673668958EE} = {D4E75888-0695-483C-A863-B1C9C584A316}
+		{3DC3750E-C4E0-489A-872B-EE42936B8DF5} = {E2411B36-5AD9-4225-9C07-1B23C09CD64D}
+		{F37556E9-1594-44FE-BD9A-9673668958EE} = {E2411B36-5AD9-4225-9C07-1B23C09CD64D}
+		{7B0A923B-7675-4C74-98C4-0A395A86C73E} = {D4E75888-0695-483C-A863-B1C9C584A316}
 	EndGlobalSection
 EndGlobal
