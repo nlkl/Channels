@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using Channels.Tests.Framework;
+using FluentAssertions;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Channels.Tests
+namespace Channels.Tests.Framework
 {
     public static class TaskStarter
     {
