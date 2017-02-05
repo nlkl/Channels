@@ -36,11 +36,11 @@ namespace Channels.Tests
             potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
-            potentialValue = mvar.TryInspect(1000);
+            potentialValue = mvar.TryInspect(Timeout.Infinite);
             potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
-            potentialValue = mvar.TryInspect(1000, new CancellationToken());
+            potentialValue = mvar.TryInspect(Timeout.Infinite, new CancellationToken());
             potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
@@ -52,11 +52,11 @@ namespace Channels.Tests
             value.Should().Be(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
-            potentialValue = await mvar.TryInspectAsync(1000);
+            potentialValue = await mvar.TryInspectAsync(Timeout.Infinite);
             potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
-            potentialValue = await mvar.TryInspectAsync(1000, new CancellationToken());
+            potentialValue = await mvar.TryInspectAsync(Timeout.Infinite, new CancellationToken());
             potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
@@ -78,11 +78,11 @@ namespace Channels.Tests
             potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
-            potentialValue = mvar.TryRead(1000);
+            potentialValue = mvar.TryRead(Timeout.Infinite);
             potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
-            potentialValue = mvar.TryRead(1000, new CancellationToken());
+            potentialValue = mvar.TryRead(Timeout.Infinite, new CancellationToken());
             potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
@@ -94,11 +94,11 @@ namespace Channels.Tests
             value.Should().Be(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
-            potentialValue = await mvar.TryReadAsync(1000);
+            potentialValue = await mvar.TryReadAsync(Timeout.Infinite);
             potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
-            potentialValue = await mvar.TryReadAsync(1000, new CancellationToken());
+            potentialValue = await mvar.TryReadAsync(Timeout.Infinite, new CancellationToken());
             potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
@@ -121,12 +121,12 @@ namespace Channels.Tests
             mvar.TryInspect().ShouldHaveValue(value);
 
             mvar = new MVar<int>();
-            success = mvar.TryWrite(value, 1000);
+            success = mvar.TryWrite(value, Timeout.Infinite);
             success.Should().BeTrue();
             mvar.TryInspect().ShouldHaveValue(value);
 
             mvar = new MVar<int>();
-            success = mvar.TryWrite(value, 1000, new CancellationToken());
+            success = mvar.TryWrite(value, Timeout.Infinite, new CancellationToken());
             success.Should().BeTrue();
             mvar.TryInspect().ShouldHaveValue(value);
 
@@ -139,12 +139,12 @@ namespace Channels.Tests
             mvar.TryInspect().ShouldHaveValue(value);
 
             mvar = new MVar<int>();
-            success = await mvar.TryWriteAsync(value, 1000);
+            success = await mvar.TryWriteAsync(value, Timeout.Infinite);
             success.Should().BeTrue();
             mvar.TryInspect().ShouldHaveValue(value);
 
             mvar = new MVar<int>();
-            success = await mvar.TryWriteAsync(value, 1000, new CancellationToken());
+            success = await mvar.TryWriteAsync(value, Timeout.Infinite, new CancellationToken());
             success.Should().BeTrue();
             mvar.TryInspect().ShouldHaveValue(value);
 
