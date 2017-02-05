@@ -15,14 +15,14 @@ namespace Channels.Tests
         public void CanCreateEmptyMVar()
         {
             var mvar = new MVar<int>();
-            mvar.TryInspect().HasValue.Should().BeFalse();
+            mvar.TryInspect().ShouldNotHaveValue();
         }
 
         [Fact(DisplayName = "MVar: Can create full mvar")]
         public void CanCreateFullMVar()
         {
             var mvar = new MVar<int>(1);
-            mvar.TryInspect().HasValue.Should().BeTrue();
+            mvar.TryInspect().ShouldHaveValue(1);
         }
 
         [Fact(DisplayName = "MVar: Can inspect full mvar")]
@@ -32,18 +32,15 @@ namespace Channels.Tests
 
             var mvar = new MVar<int>(expectedValue);
             var potentialValue = mvar.TryInspect();
-            potentialValue.HasValue.Should().BeTrue();
-            potentialValue.Value.Should().Be(expectedValue);
+            potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
             potentialValue = mvar.TryInspect(1000);
-            potentialValue.HasValue.Should().BeTrue();
-            potentialValue.Value.Should().Be(expectedValue);
+            potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
             potentialValue = mvar.TryInspect(1000, new CancellationToken());
-            potentialValue.HasValue.Should().BeTrue();
-            potentialValue.Value.Should().Be(expectedValue);
+            potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
             var value = mvar.Inspect();
@@ -55,13 +52,11 @@ namespace Channels.Tests
 
             mvar = new MVar<int>(expectedValue);
             potentialValue = await mvar.TryInspectAsync(1000);
-            potentialValue.HasValue.Should().BeTrue();
-            potentialValue.Value.Should().Be(expectedValue);
+            potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
             potentialValue = await mvar.TryInspectAsync(1000, new CancellationToken());
-            potentialValue.HasValue.Should().BeTrue();
-            potentialValue.Value.Should().Be(expectedValue);
+            potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
             value = await mvar.InspectAsync();
@@ -79,18 +74,15 @@ namespace Channels.Tests
 
             var mvar = new MVar<int>(expectedValue);
             var potentialValue = mvar.TryRead();
-            potentialValue.HasValue.Should().BeTrue();
-            potentialValue.Value.Should().Be(expectedValue);
+            potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
             potentialValue = mvar.TryRead(1000);
-            potentialValue.HasValue.Should().BeTrue();
-            potentialValue.Value.Should().Be(expectedValue);
+            potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
             potentialValue = mvar.TryRead(1000, new CancellationToken());
-            potentialValue.HasValue.Should().BeTrue();
-            potentialValue.Value.Should().Be(expectedValue);
+            potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
             var value = mvar.Read();
@@ -102,13 +94,11 @@ namespace Channels.Tests
 
             mvar = new MVar<int>(expectedValue);
             potentialValue = await mvar.TryReadAsync(1000);
-            potentialValue.HasValue.Should().BeTrue();
-            potentialValue.Value.Should().Be(expectedValue);
+            potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
             potentialValue = await mvar.TryReadAsync(1000, new CancellationToken());
-            potentialValue.HasValue.Should().BeTrue();
-            potentialValue.Value.Should().Be(expectedValue);
+            potentialValue.ShouldHaveValue(expectedValue);
 
             mvar = new MVar<int>(expectedValue);
             value = await mvar.ReadAsync();
@@ -127,52 +117,43 @@ namespace Channels.Tests
             var mvar = new MVar<int>();
             var success = mvar.TryWrite(value);
             success.Should().BeTrue();
-            mvar.TryInspect().HasValue.Should().BeTrue();
-            mvar.TryInspect().Value.Should().Be(value);
+            mvar.TryInspect().ShouldHaveValue(value);
 
             mvar = new MVar<int>();
             success = mvar.TryWrite(value, 1000);
             success.Should().BeTrue();
-            mvar.TryInspect().HasValue.Should().BeTrue();
-            mvar.TryInspect().Value.Should().Be(value);
+            mvar.TryInspect().ShouldHaveValue(value);
 
             mvar = new MVar<int>();
             success = mvar.TryWrite(value, 1000, new CancellationToken());
             success.Should().BeTrue();
-            mvar.TryInspect().HasValue.Should().BeTrue();
-            mvar.TryInspect().Value.Should().Be(value);
+            mvar.TryInspect().ShouldHaveValue(value);
 
             mvar = new MVar<int>();
             mvar.Write(value);
-            mvar.TryInspect().HasValue.Should().BeTrue();
-            mvar.TryInspect().Value.Should().Be(value);
+            mvar.TryInspect().ShouldHaveValue(value);
 
             mvar = new MVar<int>();
             mvar.Write(value, new CancellationToken());
-            mvar.TryInspect().HasValue.Should().BeTrue();
-            mvar.TryInspect().Value.Should().Be(value);
+            mvar.TryInspect().ShouldHaveValue(value);
 
             mvar = new MVar<int>();
             success = await mvar.TryWriteAsync(value, 1000);
             success.Should().BeTrue();
-            mvar.TryInspect().HasValue.Should().BeTrue();
-            mvar.TryInspect().Value.Should().Be(value);
+            mvar.TryInspect().ShouldHaveValue(value);
 
             mvar = new MVar<int>();
             success = await mvar.TryWriteAsync(value, 1000, new CancellationToken());
             success.Should().BeTrue();
-            mvar.TryInspect().HasValue.Should().BeTrue();
-            mvar.TryInspect().Value.Should().Be(value);
+            mvar.TryInspect().ShouldHaveValue(value);
 
             mvar = new MVar<int>();
             await mvar.WriteAsync(value);
-            mvar.TryInspect().HasValue.Should().BeTrue();
-            mvar.TryInspect().Value.Should().Be(value);
+            mvar.TryInspect().ShouldHaveValue(value);
 
             mvar = new MVar<int>();
             await mvar.WriteAsync(value, new CancellationToken());
-            mvar.TryInspect().HasValue.Should().BeTrue();
-            mvar.TryInspect().Value.Should().Be(value);
+            mvar.TryInspect().ShouldHaveValue(value);
         }
 
         [Fact(DisplayName = "MVar: Cannot write to full mvar")]
@@ -186,14 +167,14 @@ namespace Channels.Tests
         public void CannotReadFromEmptyMVar()
         {
             var mvar = new MVar<int>();
-            mvar.TryRead().HasValue.Should().BeFalse();
+            mvar.TryRead().ShouldNotHaveValue();
         }
 
         [Fact(DisplayName = "MVar: Cannot inspect empty mvar")]
         public void CannotInspectEmptyMVar()
         {
             var mvar = new MVar<int>();
-            mvar.TryInspect().HasValue.Should().BeFalse();
+            mvar.TryInspect().ShouldNotHaveValue();
         }
 
         [Fact(DisplayName = "MVar: Write fills mvar")]
@@ -208,16 +189,16 @@ namespace Channels.Tests
         public void ReadEmptiesMVar()
         {
             var mvar = new MVar<int>(1);
-            mvar.TryRead().HasValue.Should().BeTrue();
-            mvar.TryRead().HasValue.Should().BeFalse();
+            mvar.TryRead().ShouldHaveValue(1);
+            mvar.TryRead().ShouldNotHaveValue();
         }
 
         [Fact(DisplayName = "MVar: Inspect does not empty mvar")]
         public void InspectDoesNotEmptyMVar()
         {
             var mvar = new MVar<int>(1);
-            mvar.TryInspect().HasValue.Should().BeTrue();
-            mvar.TryInspect().HasValue.Should().BeTrue();
+            mvar.TryInspect().ShouldHaveValue(1);
+            mvar.TryInspect().ShouldHaveValue(1);
         }
     }
 }
