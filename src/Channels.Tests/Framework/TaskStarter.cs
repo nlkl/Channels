@@ -21,5 +21,25 @@ namespace Channels.Tests.Framework
             await Task.Delay(_delay).ConfigureAwait(false);
             await action().ConfigureAwait(false);
         }
+
+        public static async Task RunAndCatch(Action action)
+        {
+            try
+            {
+                await Task.Delay(_delay).ConfigureAwait(false);
+                action();
+            }
+            catch { }
+        }
+
+        public static async Task RunAndCatch(Func<Task> action)
+        {
+            try
+            {
+                await Task.Delay(_delay).ConfigureAwait(false);
+                await action().ConfigureAwait(false);
+            }
+            catch { }
+        }
     }
 }
