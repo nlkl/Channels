@@ -68,6 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Framework\AssertionExtensions.cs" />
+    <Compile Include="MVar_Cancellation.cs" />
     <Compile Include="MVar_Blocking.cs" />
     <Compile Include="MVar_BasicOperations.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
