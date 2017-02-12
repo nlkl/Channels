@@ -55,10 +55,18 @@ namespace Channels
             return readySelectables[selectionIndex].Accept();
         }
 
-        public static void Test()
+        public static ISelectable<TResult> Case<T, TResult>(this ISelectableChannel<T> channel, Func<T, TResult> continuation)
         {
-            var channel1 = new UnboundedChannel<int>() as ISelectableChannel<int>;
-            var channel2 = new UnboundedChannel<int>() as ISelectableChannel<int>;
+            if (channel == null) throw new ArgumentNullException(nameof(channel));
+            if (continuation == null) throw new ArgumentNullException(nameof(continuation));
+            return channel.ReadSelectable().ContinueWith(continuation);
+        }
+
+        public static ISelectable Case<T>(this ISelectableChannel<T> channel, Action<T> continuation)
+        {
+            if (channel == null) throw new ArgumentNullException(nameof(channel));
+            if (continuation == null) throw new ArgumentNullException(nameof(continuation));
+            return channel.ReadSelectable().ContinueWith(continuation);
         }
     }
 }
