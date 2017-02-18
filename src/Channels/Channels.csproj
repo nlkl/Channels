@@ -45,10 +45,8 @@
     <Compile Include="IReadableChannel.cs" />
     <Compile Include="IInspectableChannel.cs" />
     <Compile Include="ISelectableChannel.cs" />
-    <Compile Include="ISelectable.cs" />
     <Compile Include="IWritableChannel.cs" />
     <Compile Include="Selectable.cs" />
-    <Compile Include="SelectableExtensions.cs" />
     <Compile Include="SynchronousChannel.cs" />
     <Compile Include="BufferedChannel.cs" />
     <Compile Include="BoundedChannel.cs" />

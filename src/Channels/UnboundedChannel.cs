@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Channels
@@ -157,6 +158,36 @@ namespace Channels
             var node = new Node(value, next);
             stream.Write(node);
             _writeCell.Write(next);
+        }
+
+        public async Task<Selectable<T>> ReadSelectableAsync(CancellationToken cancellationToken)
+        {
+            var stream = await _readCell.ReadAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await stream.InspectAsync(cancellationToken).ConfigureAwait(false);
+
+                return new Selectable<T>(() =>
+                {
+                    try
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        var node = stream.Read();
+                        _readCell.Write(node.Next);
+                        return node.Value;
+                    }
+                    catch
+                    {
+                        _readCell.Write(stream);
+                        throw;
+                    }
+                });
+            }
+            catch
+            {
+                _readCell.Write(stream);
+                throw;
+            }
         }
 
         private struct Node

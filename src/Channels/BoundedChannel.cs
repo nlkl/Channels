@@ -201,6 +201,37 @@ namespace Channels
             }
         }
 
+        public async Task<Selectable<T>> ReadSelectableAsync(CancellationToken cancellationToken)
+        {
+            var stream = await _readCell.ReadAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await stream.InspectAsync(cancellationToken).ConfigureAwait(false);
+
+                return new Selectable<T>(() =>
+                {
+                    try
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        var node = stream.Read();
+                        Decrement();
+                        _readCell.Write(node.Next);
+                        return node.Value;
+                    }
+                    catch
+                    {
+                        _readCell.Write(stream);
+                        throw;
+                    }
+                });
+            }
+            catch
+            {
+                _readCell.Write(stream);
+                throw;
+            }
+        }
+
         private void Decrement()
         {
             if (Interlocked.Decrement(ref _count) == _capacity)

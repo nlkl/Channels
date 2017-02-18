@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Channels
@@ -134,6 +135,28 @@ namespace Channels
             }
 
             return false;
+        }
+
+        public async Task<Selectable<T>> ReadSelectableAsync(CancellationToken cancellationToken)
+        {
+            await _canReadSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+            return new Selectable<T>(() =>
+            {
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var value = _value;
+                    _value = default(T);
+                    _canWriteSignal.Release();
+                    return value;
+                }
+                catch
+                {
+                    _canReadSignal.Release();
+                    throw;
+                }
+            });
         }
     }
 }

@@ -116,5 +116,11 @@ namespace Channels
                 _writeLock.Release();
             }
         }
+
+        public Task<Selectable<T>> ReadSelectableAsync(CancellationToken cancellationToken)
+        {
+            // TODO: Find a good way to implement selection on sync channels
+            throw new NotImplementedException();
+        }
     }
 }

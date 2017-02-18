@@ -187,6 +187,36 @@ namespace Channels
             }
         }
 
+        public async Task<Selectable<T>> ReadSelectableAsync(CancellationToken cancellationToken)
+        {
+            var index = await _readIndexCell.ReadAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                var valueCell = _buffer[index];
+                await valueCell.InspectAsync(cancellationToken).ConfigureAwait(false);
+
+                return new Selectable<T>(() =>
+                {
+                    try
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        var value = valueCell.Read();
+                        index = NextIndex(index);
+                        return value;
+                    }
+                    finally
+                    {
+                        _readIndexCell.Write(index);
+                    }
+                });
+            }
+            catch
+            {
+                _readIndexCell.Write(index);
+                throw;
+            }
+        }
+
         private int NextIndex(int index) => (index + 1) % _capacity;
     }
 }
