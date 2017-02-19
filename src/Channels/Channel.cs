@@ -8,6 +8,13 @@ namespace Channels
 {
     public static class Channel
     {
+        public static IChannel<T> CreateMVar<T>() => new MVar<T>();
+        public static IChannel<T> CreateMVar<T>(T value) => new MVar<T>(value);
+        public static IChannel<T> CreateSynchronous<T>() => new SynchronousChannel<T>();
+        public static IChannel<T> CreateUnbounded<T>() => new UnboundedChannel<T>();
+        public static IChannel<T> CreateBounded<T>(int capacity) => new BoundedChannel<T>(capacity);
+        public static IChannel<T> CreateBuffered<T>(int capacity) => new BufferedChannel<T>(capacity);
+
         public static T Select<T>(params ISelectableChannel<T>[] channels) => SelectAsync(channels).GetAwaiter().GetResult();
         public static async Task<T> SelectAsync<T>(params ISelectableChannel<T>[] channels)
         {
