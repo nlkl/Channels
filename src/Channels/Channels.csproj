@@ -47,6 +47,7 @@
     <Compile Include="ISelectableChannel.cs" />
     <Compile Include="IWritableChannel.cs" />
     <Compile Include="Selectable.cs" />
+    <Compile Include="SelectableChannelExtensions.cs" />
     <Compile Include="SynchronousChannel.cs" />
     <Compile Include="BufferedChannel.cs" />
     <Compile Include="BoundedChannel.cs" />

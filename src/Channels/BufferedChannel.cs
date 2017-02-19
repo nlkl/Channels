@@ -195,12 +195,12 @@ namespace Channels
                 var valueCell = _buffer[index];
                 await valueCell.InspectAsync(cancellationToken).ConfigureAwait(false);
 
-                return new Selectable<T>(() =>
+                return new Selectable<T>(async waitUntilSelected =>
                 {
                     try
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        var value = valueCell.Read();
+                        await waitUntilSelected(cancellationToken).ConfigureAwait(false);
+                        var value = await valueCell.ReadAsync().ConfigureAwait(false);
                         index = NextIndex(index);
                         return value;
                     }

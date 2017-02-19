@@ -208,12 +208,12 @@ namespace Channels
             {
                 await stream.InspectAsync(cancellationToken).ConfigureAwait(false);
 
-                return new Selectable<T>(() =>
+                return new Selectable<T>(async waitUntilSelected =>
                 {
                     try
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        var node = stream.Read();
+                        await waitUntilSelected(cancellationToken).ConfigureAwait(false);
+                        var node = await stream.ReadAsync().ConfigureAwait(false);
                         Decrement();
                         _readCell.Write(node.Next);
                         return node.Value;

@@ -43,7 +43,7 @@ namespace Channels
             }
 
             var chosenSelectable = await readyReservations[selectionIndex].SelectableTask.ConfigureAwait(false);
-            return chosenSelectable.Select();
+            return await chosenSelectable.SelectAsync().ConfigureAwait(false);
         }
 
         private struct SelectReservation<T>

@@ -141,11 +141,11 @@ namespace Channels
         {
             await _canReadSignal.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            return new Selectable<T>(() =>
+            return new Selectable<T>(async waitUntilSelected =>
             {
                 try
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
+                    await waitUntilSelected(cancellationToken).ConfigureAwait(false);
                     var value = _value;
                     _value = default(T);
                     _canWriteSignal.Release();
