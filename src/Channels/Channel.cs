@@ -23,8 +23,10 @@ namespace Channels
         {
             if (channels == null) throw new ArgumentNullException(nameof(channels));
 
+            channels = channels.Where(channel => channel != null).ToArray();
+            if (!channels.Any()) throw new ArgumentException("At least one non-null channel must be provided.", nameof(channels));
+
             var reservations = channels
-                .Where(channel => channel != null)
                 .Select(channel => new SelectReservation<T>(channel))
                 .ToArray();
 
