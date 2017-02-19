@@ -15,13 +15,16 @@ namespace Channels
         public static IChannel<T> CreateBounded<T>(int capacity) => new BoundedChannel<T>(capacity);
         public static IChannel<T> CreateBuffered<T>(int capacity) => new BufferedChannel<T>(capacity);
 
-        public static T Select<T>(params ISelectableChannel<T>[] channels) => SelectAsync(channels).GetAwaiter().GetResult();
-        public static async Task<T> SelectAsync<T>(params ISelectableChannel<T>[] channels)
+        public static T Select<T>(params ISelectableChannel<T>[] channels) => Select(channels?.AsEnumerable());
+        public static T Select<T>(IEnumerable<ISelectableChannel<T>> channels) => SelectAsync(channels).GetAwaiter().GetResult();
+
+        public static Task<T> SelectAsync<T>(params ISelectableChannel<T>[] channels) => SelectAsync(channels?.AsEnumerable());
+        public static async Task<T> SelectAsync<T>(IEnumerable<ISelectableChannel<T>> channels)
         {
-            if (channels == null || channels.Any(channel => channel == null)) throw new ArgumentNullException(nameof(channels));
+            if (channels == null) throw new ArgumentNullException(nameof(channels));
 
             var reservations = channels
-                .Where(channel => channels != null)
+                .Where(channel => channel != null)
                 .Select(channel => new SelectReservation<T>(channel))
                 .ToArray();
 
