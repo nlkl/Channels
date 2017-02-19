@@ -62,3 +62,21 @@ module Channel =
 
     let writeDeferredAsync (channel : IWritableChannel<'T>) value =
         writeOrCancelAsync channel value |> Async.defer
+
+    let select (channels : seq<#ISelectableChannel<'T>>) =
+        Channel.Select (channels |> Seq.nullIgnoringCast)
+
+    let selectAsync (channels : seq<#ISelectableChannel<'T>>) =
+        Channel.SelectAsync (channels |> Seq.nullIgnoringCast) |> Async.AwaitTask
+
+    let selectDeferredAsync (channels : seq<#ISelectableChannel<'T>>) =
+        Async.defer (fun _ -> selectAsync channels)
+
+[<AutoOpen>]
+module ChannelOperators =
+    let inline (|=>) (channel : ISelectableChannel<'T>) (continuation : 'T -> 'TResult) =
+        SelectableChannelExtensions.SelectWith<'T, 'TResult>(channel, continuation)
+
+    let inline (|=>!) (channel : ISelectableChannel<'T>) (continuation : 'T -> Async<'TResult>) =
+        let continuation = fun value -> continuation value |> Async.StartAsTask
+        SelectableChannelExtensions.SelectWith<'T, 'TResult>(channel, continuation)
